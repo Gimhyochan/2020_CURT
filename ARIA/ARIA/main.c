@@ -2,14 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ARIA.h"
-#define MUL2(a) (a << 1) ^ (a & 0x80 ? 0x1b : 0)
-#define MUL3(a) (MUL2(a)) ^ (a) 
-#define MUL4(a) MUL2((MUL2(a))) 
-#define MUL8(a) MUL2((MUL2((MUL2(a)))))
-#define MUL9(a) (MUL8(a)) ^ (a)
-#define MULB(a) (MUL8(a)) ^ (MUL2(a)) ^ (a)
-#define MULD(a) (MUL8(a)) ^ (MUL4(a)) ^ (a)
-#define MULE(a) (MUL8(a)) ^ (MUL4(a)) ^ (MUL2(a))
 /* 키 초기화에서 사용되는 상수 전역변수로 정의*/
 u8 CK1[16] = { 0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0 };
 u8 CK2[16] = { 0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0 };
@@ -18,11 +10,11 @@ u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97,
 u32 u4byte_in(u8* x) {
 	return (x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3];
 }
-/* Change 8-bits to 64-bits */
-u64 u4byte_in64(u8* x) {
+// Change 8-bits to 64-bits
+/*u64 u4byte_in64(u8* x) {
 	return (x[0] << 56) | (x[1] << 48) | (x[2] << 40) | (x[3] << 32) | 
 		(x[4] << 24) | (x[5] << 16) | (x[6] << 8) | x[7];
-}
+} */
 /* Change 32-bits to 8-bits */
 void u4byte_out(u8* x, u32 y) {
 	x[0] = (y >> 24) & 0xff;
@@ -30,13 +22,13 @@ void u4byte_out(u8* x, u32 y) {
 	x[2] = (y >> 8) & 0xff;
 	x[3] = y & 0xff;
 }
-/* Change 64-bits to 8-bits */
-void u4byte_out64(u8* x, u64 y) {
+// Change 64-bits to 8-bits 
+/* void u4byte_out64(u8* x, u64 y) {
 	x[0] = (y >> 56) & 0xff; x[1] = (y >> 48) & 0xff;
 	x[2] = (y >> 40) & 0xff; x[3] = (y >> 32) & 0xff;
 	x[4] = (y >> 24) & 0xff; x[5] = (y >> 16) & 0xff;
 	x[6] = (y >> 8) & 0xff; x[7] = y & 0xff;
-}
+} */
 void AddRoundKey(u8 S[16], u8 RK[16]) {
 	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] = RK[3];
 	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] = RK[7];
@@ -60,109 +52,152 @@ void SubstLayer(u8 S[16], int round) {
 }
 void DiffLayer(u8 S[16]) {
 	u16 temp;
-	/* 16 x 16 행렬의 최상위 비트가 위쪽인지 아랫쪽인지 판단되지 않아 두 가지 경우를 모두 작성함 */
-	/* 최상위 비트가 맨 아래인 경우 */
-	S[0] = (u8)(0x6358 ^ S[0]); S[1] = (u8)(0x93a4 ^ S[1]); S[2] = (u8)(0x9c52 ^ S[2]); S[3] = (u8)(0x6ca1 ^ S[3]);
-	S[4] = (u8)(0xc925 ^ S[4]); S[5] = (u8)(0xc61a ^ S[5]); S[6] = (u8)(0x3685 ^ S[6]); S[7] = (u8)(0x394a ^ S[7]);
-	S[8] = (u8)(0xa493 ^ S[8]); S[9] = (u8)(0x5863 ^ S[9]); S[10] = (u8)(0xa16c ^ S[10]); S[11] = (u8)(0x529c ^ S[11]);
-	S[12] = (u8)(0x1ac6 ^ S[12]); S[13] = (u8)(0x25c9 ^ S[13]); S[14] = (u8)(0x4a93 ^ S[14]); S[15] = (u8)(0x8536 ^ S[15]);
 
-	/* 최상위 비트가 맨 위인 경우 */
-	/* S[0] = (u8)(0x1ac6 ^ S[0]); S[1] = (u8)(0x25c9 ^ S[1]); S[2] = (u8)(0x4a93 ^ S[2]); S[3] = (u8)(0x8536 ^ S[3]);
+	S[0] = (u8)(0x1ac6 ^ S[0]); S[1] = (u8)(0x25c9 ^ S[1]); S[2] = (u8)(0x4a93 ^ S[2]); S[3] = (u8)(0x8536 ^ S[3]);
 	S[4] = (u8)(0xa493 ^ S[4]); S[5] = (u8)(0x5863 ^ S[5]); S[6] = (u8)(0xa16c ^ S[6]); S[7] = (u8)(0x529c ^ S[7]);
 	S[8] = (u8)(0xc925 ^ S[8]); S[9] = (u8)(0xc61a ^ S[9]); S[10] = (u8)(0x3685 ^ S[10]); S[11] = (u8)(0x394a ^ S[11]);
-	S[12] = (u8)(0x6358 ^ S[12]); S[13] = (u8)(0x93a4 ^ S[13]); S[14] = (u8)(0x9c52 ^ S[14]); S[15] = (u8)(0x6ca1 ^ S[15]); */
+	S[12] = (u8)(0x6358 ^ S[12]); S[13] = (u8)(0x93a4 ^ S[13]); S[14] = (u8)(0x9c52 ^ S[14]); S[15] = (u8)(0x6ca1 ^ S[15]);
 }
 
 void RoundKeyGeneration128(u8 W[64], u8 RK[208]) {
-	u64 temp[8]; // 키 초기화에서 생성된거 원본
-	/* W[0] = temp[0] ~ temp[1]; W[1] = temp[2] ~ temp[3] 
-	   W[2] = temp[4] ~ temp[5]; W[3] = temp[6] ~ temp[7] */
-	u64 result[8]; // 키 비트 옮기기 위해서 연산된 결과를 담는 배열
+	u32 temp[16];
+	/* W[0] = temp[0] ~ temp[3]; W[1] = temp[4] ~ temp[7];
+	   W[2] = temp[8] ~ temp[11]; W[3] = temp[12] ~ temp[15] */
+	u32 result[16];
 	int i;
 
-	for (i = 0; i < 64; i += 8) {
-		temp[i / 8] = u4byte_in64(W + i);
-		result[i / 8] = temp[i / 8];
-	}
+	for (i = 0; i < 64; i += 4)
+		temp[i / 4] = u4byte_in(W + i);
 
-	/* ek1 */
-	result[2] = (temp[3] & 0x7ffff) | ((temp[2] >> 19) & 0x1fffffffffff);
-	result[3] = (temp[2] & 0x7ffff) | ((temp[3] >> 19) & 0x1fffffffffff);
-	u4byte_out64(RK, temp[0] ^ result[2]);
-	u4byte_out64(RK + 8, temp[1] ^ result[3]);
+	// ek1
+	result[4] = (temp[7] & 0x7ffff) | ((temp[4] >> 19) & 0x1fff);
+	result[5] = (temp[4] & 0x7ffff) | ((temp[5] >> 19) & 0x1fff);
+	result[6] = (temp[5] & 0x7ffff) | ((temp[6] >> 19) & 0x1fff);
+	result[7] = (temp[6] & 0x7ffff) | ((temp[7] >> 19) & 0x1fff);
+	u4byte_out(RK, temp[0] ^ result[4]);
+	u4byte_out(RK + 4, temp[1] ^ result[5]);
+	u4byte_out(RK + 8, temp[2] ^ result[6]);
+	u4byte_out(RK + 12, temp[3] ^ result[7]);
 
-	/* ek2 */
-	result[4] = (temp[5] & 0x7ffff) | ((temp[4] >> 19) & 0x1fffffffffff);
-	result[5] = (temp[4] & 0x7ffff) | ((temp[5] >> 19) & 0x1fffffffffff);
-	u4byte_out64(RK + 16, temp[2] ^ result[4]);
-	u4byte_out64(RK + 24, temp[3] ^ result[5]);
+	// ek2
+	result[8] = (temp[11] & 0x7ffff) | ((temp[8] >> 19) & 0x1fff);
+	result[9] = (temp[8] & 0x7ffff) | ((temp[9] >> 19) & 0x1fff);
+	result[10] = (temp[9] & 0x7ffff) | ((temp[10] >> 19) & 0x1fff);
+	result[11] = (temp[10] & 0x7ffff) | ((temp[11] >> 19) & 0x1fff);
+	u4byte_out(RK + 16, temp[4] ^ result[8]);
+	u4byte_out(RK + 20, temp[5] ^ result[9]);
+	u4byte_out(RK + 24, temp[6] ^ result[10]);
+	u4byte_out(RK + 28, temp[7] ^ result[11]);
 
-	/* ek3 */
-	result[6] = (temp[7] & 0x7ffff) | ((temp[6] >> 19) & 0x1fffffffffff);
-	result[7] = (temp[6] & 0x7ffff) | ((temp[7] >> 19) & 0x1fffffffffff);
-	u4byte_out64(RK + 32, temp[4] ^ result[6]);
-	u4byte_out64(RK + 40, temp[5] ^ result[7]);
+	// ek3
+	result[12] = (temp[15] & 0x7ffff) | ((temp[12] >> 19) & 0x1fff);
+	result[13] = (temp[12] & 0x7ffff) | ((temp[13] >> 19) & 0x1fff);
+	result[14] = (temp[13] & 0x7ffff) | ((temp[14] >> 19) & 0x1fff);
+	result[15] = (temp[14] & 0x7ffff) | ((temp[15] >> 19) & 0x1fff);
+	u4byte_out(RK + 32, temp[8] ^ result[12]);
+	u4byte_out(RK + 36, temp[9] ^ result[13]);
+	u4byte_out(RK + 40, temp[10] ^ result[14]);
+	u4byte_out(RK + 44, temp[11] ^ result[15]);
 
-	/* ek4 */
-	result[0] = (temp[1] & 0x7ffff) | ((temp[0] >> 19) & 0x1fffffffffff);
-	result[1] = (temp[0] & 0x7ffff) | ((temp[1] >> 19) & 0x1fffffffffff);
-	u4byte_out64(RK + 48, temp[6] ^ result[0]);
-	u4byte_out64(RK + 56, temp[7] ^ result[1]);
+	// ek4
+	result[0] = (temp[3] & 0x7ffff) | ((temp[0] >> 19) & 0x1fff);
+	result[1] = (temp[0] & 0x7ffff) | ((temp[1] >> 19) & 0x1fff);
+	result[2] = (temp[1] & 0x7ffff) | ((temp[2] >> 19) & 0x1fff);
+	result[3] = (temp[2] & 0x7ffff) | ((temp[3] >> 19) & 0x1fff);
+	u4byte_out(RK + 48, temp[12] ^ result[0]);
+	u4byte_out(RK + 52, temp[13] ^ result[1]);
+	u4byte_out(RK + 56, temp[14] ^ result[2]);
+	u4byte_out(RK + 60, temp[15] ^ result[3]);
 
-	/* ek5 */
-	result[2] = (temp[3] & 0x7fffffff) | ((temp[2] >> 31) & 0x1ffffffff);
-	result[3] = (temp[2] & 0x7fffffff) | ((temp[3] >> 19) & 0x1ffffffff);
-	u4byte_out64(RK + 64, temp[0] ^ result[2]);
-	u4byte_out64(RK + 72, temp[1] ^ result[3]);
+	// ek5
+	result[4] = (temp[7] & 0x7fffffff) | ((temp[4] >> 31) & 0x1);
+	result[5] = (temp[4] & 0x7fffffff) | ((temp[5] >> 31) & 0x1);
+	result[6] = (temp[5] & 0x7fffffff) | ((temp[6] >> 31) & 0x1);
+	result[7] = (temp[6] & 0x7fffffff) | ((temp[7] >> 31) & 0x1);
+	u4byte_out(RK + 64, temp[0] ^ result[4]);
+	u4byte_out(RK + 68, temp[1] ^ result[5]);
+	u4byte_out(RK + 72, temp[2] ^ result[6]);
+	u4byte_out(RK + 76, temp[3] ^ result[7]);
 
-	/* ek6 */
-	result[4] = (temp[5] & 0x7fffffff) | ((temp[4] >> 31) & 0x1ffffffff);
-	result[5] = (temp[4] & 0x7fffffff) | ((temp[5] >> 19) & 0x1ffffffff);
-	u4byte_out64(RK + 80, temp[2] ^ result[4]);
-	u4byte_out64(RK + 88, temp[3] ^ result[5]);
+	// ek6
+	result[8] = (temp[11] & 0x7fffffff) | ((temp[8] >> 31) & 0x1);
+	result[9] = (temp[8] & 0x7fffffff) | ((temp[9] >> 31) & 0x1);
+	result[10] = (temp[9] & 0x7fffffff) | ((temp[10] >> 31) & 0x1);
+	result[11] = (temp[10] & 0x7fffffff) | ((temp[11] >> 31) & 0x1);
+	u4byte_out(RK + 80, temp[4] ^ result[8]);
+	u4byte_out(RK + 84, temp[5] ^ result[9]);
+	u4byte_out(RK + 88, temp[6] ^ result[10]);
+	u4byte_out(RK + 92, temp[7] ^ result[11]);
 
-	/* ek7 */
-	result[6] = (temp[7] & 0x7fffffff) | ((temp[6] >> 31) & 0x1ffffffff);
-	result[7] = (temp[6] & 0x7fffffff) | ((temp[7] >> 19) & 0x1ffffffff);
-	u4byte_out64(RK + 96, temp[4] ^ result[6]);
-	u4byte_out64(RK + 104, temp[5] ^ result[7]);
+	// ek7
+	result[12] = (temp[15] & 0x7fffffff) | ((temp[12] >> 31) & 0x1);
+	result[13] = (temp[12] & 0x7fffffff) | ((temp[13] >> 31) & 0x1);
+	result[14] = (temp[13] & 0x7fffffff) | ((temp[14] >> 31) & 0x1);
+	result[15] = (temp[14] & 0x7fffffff) | ((temp[15] >> 31) & 0x1);
+	u4byte_out(RK + 96, temp[8] ^ result[12]);
+	u4byte_out(RK + 100, temp[9] ^ result[13]);
+	u4byte_out(RK + 104, temp[10] ^ result[14]);
+	u4byte_out(RK + 108, temp[11] ^ result[15]);
 
-	/* ek8 */
-	result[0] = (temp[1] & 0x7fffffff) | ((temp[0] >> 31) & 0x1ffffffff);
-	result[1] = (temp[0] & 0x7fffffff) | ((temp[1] >> 19) & 0x1ffffffff);
-	u4byte_out64(RK + 112, temp[6] ^ result[0]);
-	u4byte_out64(RK + 120, temp[7] ^ result[1]);
+	// ek8
+	result[0] = (temp[3] & 0x7fffffff) | ((temp[0] >> 31) & 0x1);
+	result[1] = (temp[0] & 0x7fffffff) | ((temp[1] >> 31) & 0x1);
+	result[2] = (temp[1] & 0x7fffffff) | ((temp[2] >> 31) & 0x1);
+	result[3] = (temp[2] & 0x7fffffff) | ((temp[3] >> 31) & 0x1);
+	u4byte_out(RK + 112, temp[12] ^ result[0]);
+	u4byte_out(RK + 116, temp[13] ^ result[1]);
+	u4byte_out(RK + 120, temp[14] ^ result[2]);
+	u4byte_out(RK + 124, temp[15] ^ result[3]);
 
-	/* ek9 */
-	result[2] = (temp[2] & 0x7) | ((temp[3] >> 3) & 0x1fffffffffffffff);
-	result[3] = (temp[3] & 0x7) | ((temp[2] >> 3) & 0x1fffffffffffffff);
-	u4byte_out64(RK + 128, temp[0] ^ result[2]);
-	u4byte_out64(RK + 136, temp[1] ^ result[3]);
+	// ek9
+	result[4] = (temp[5] & 0x7) | ((temp[6] >> 3) & 0x1fffffff);
+	result[5] = (temp[6] & 0x7) | ((temp[7] >> 3) & 0x1fffffff);
+	result[6] = (temp[7] & 0x7) | ((temp[4] >> 3) & 0x1fffffff);
+	result[7] = (temp[4] & 0x7) | ((temp[5] >> 3) & 0x1fffffff);
+	u4byte_out(RK + 128, temp[0] ^ result[4]);
+	u4byte_out(RK + 132, temp[1] ^ result[5]);
+	u4byte_out(RK + 136, temp[2] ^ result[6]);
+	u4byte_out(RK + 140, temp[3] ^ result[7]);
 
-	/* ek10 */
-	result[4] = (temp[4] & 0x7) | ((temp[5] >> 3) & 0x1fffffffffffffff);
-	result[5] = (temp[5] & 0x7) | ((temp[4] >> 3) & 0x1fffffffffffffff);
-	u4byte_out64(RK + 144, temp[2] ^ result[4]);
-	u4byte_out64(RK + 152, temp[3] ^ result[5]);
+	// ek10
+	result[8] = (temp[9] & 0x7) | ((temp[10] >> 3) & 0x1fffffff);
+	result[9] = (temp[10] & 0x7) | ((temp[11] >> 3) & 0x1fffffff);
+	result[10] = (temp[11] & 0x7) | ((temp[8] >> 3) & 0x1fffffff);
+	result[11] = (temp[8] & 0x7) | ((temp[9] >> 3) & 0x1fffffff);
+	u4byte_out(RK + 144, temp[4] ^ result[8]);
+	u4byte_out(RK + 148, temp[5] ^ result[9]);
+	u4byte_out(RK + 152, temp[6] ^ result[10]);
+	u4byte_out(RK + 156, temp[7] ^ result[11]);
 
-	/* ek11 */
-	result[6] = (temp[6] & 0x7) | ((temp[7] >> 3) & 0x1fffffffffffffff);
-	result[7] = (temp[7] & 0x7) | ((temp[6] >> 3) & 0x1fffffffffffffff);
-	u4byte_out64(RK + 160, temp[4] ^ result[6]);
-	u4byte_out64(RK + 168, temp[5] ^ result[7]);
+	// ek11
+	result[12] = (temp[13] & 0x7) | ((temp[14] >> 3) & 0x1fffffff);
+	result[13] = (temp[14] & 0x7) | ((temp[15] >> 3) & 0x1fffffff);
+	result[14] = (temp[15] & 0x7) | ((temp[12] >> 3) & 0x1fffffff);
+	result[15] = (temp[12] & 0x7) | ((temp[13] >> 3) & 0x1fffffff);
+	u4byte_out(RK + 160, temp[8] ^ result[12]);
+	u4byte_out(RK + 164, temp[9] ^ result[13]);
+	u4byte_out(RK + 168, temp[10] ^ result[14]);
+	u4byte_out(RK + 172, temp[11] ^ result[15]);
 
-	/* ek12 */
-	result[0] = (temp[0] & 0x7) | ((temp[1] >> 3) & 0x1fffffffffffffff);
-	result[1] = (temp[1] & 0x7) | ((temp[0] >> 3) & 0x1fffffffffffffff);
-	u4byte_out64(RK + 176, temp[6] ^ result[0]);
-	u4byte_out64(RK + 184, temp[7] ^ result[1]);
+	// ek12
+	result[0] = (temp[1] & 0x7) | ((temp[2] >> 3) & 0x1fffffff);
+	result[1] = (temp[2] & 0x7) | ((temp[3] >> 3) & 0x1fffffff);
+	result[2] = (temp[3] & 0x7) | ((temp[0] >> 3) & 0x1fffffff);
+	result[3] = (temp[0] & 0x7) | ((temp[1] >> 3) & 0x1fffffff);
+	u4byte_out(RK + 176, temp[12] ^ result[0]);
+	u4byte_out(RK + 180, temp[13] ^ result[1]);
+	u4byte_out(RK + 184, temp[14] ^ result[2]);
+	u4byte_out(RK + 188, temp[15] ^ result[3]);
 
-	/* ek13 */
-	result[2] = (temp[2] & 0x1ffffffff) | ((temp[3] >> 33) & 0x7fffffff);
-	result[3] = (temp[3] & 0x1ffffffff) | ((temp[2] >> 33) & 0x7fffffff);
-	u4byte_out64(RK + 192, temp[0] ^ result[2]);
-	u4byte_out64(RK + 200, temp[1] ^ result[3]);
+	// ek13
+	result[4] = (temp[4] & 0x1) | ((temp[5] >> 1) & 0x7fffffff);
+	result[5] = (temp[5] & 0x1) | ((temp[6] >> 1) & 0x7fffffff);
+	result[6] = (temp[6] & 0x1) | ((temp[7] >> 1) & 0x7fffffff);
+	result[7] = (temp[7] & 0x1) | ((temp[4] >> 1) & 0x7fffffff);
+	u4byte_out(RK + 192, temp[0] ^ result[4]);
+	u4byte_out(RK + 196, temp[1] ^ result[5]);
+	u4byte_out(RK + 200, temp[2] ^ result[6]);
+	u4byte_out(RK + 204, temp[3] ^ result[7]);
 }
 void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8 RK[208]) {
 	u8 temp[16];
@@ -269,6 +304,11 @@ int main() {
 		   KR[i] = (MK[i]); */
 
 	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK);
+	for (i = 0; i < 208; i++) {
+		printf("%02x ", RK[i]);
+		if (i % 16 == 15)
+			printf("\n\n");
+	}
 	ARIA_ENC(PT, CT, keysize, W, RK);
 
 	for (i = 0; i < 16; i++)
