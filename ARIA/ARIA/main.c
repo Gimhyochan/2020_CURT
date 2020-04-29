@@ -303,6 +303,7 @@ int main() {
 	   for (i = 16; i < 32; i++)
 		   KR[i] = (MK[i]); */
 
+	/* Round Key Check */
 	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK);
 	for (i = 0; i < 208; i++) {
 		printf("%02x ", RK[i]);
