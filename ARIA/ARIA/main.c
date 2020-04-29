@@ -51,12 +51,35 @@ void SubstLayer(u8 S[16], int round) {
 	}
 }
 void DiffLayer(u8 S[16]) {
-	u16 temp;
+	u8 temp[16];
+	int i;
 
-	S[0] = (u8)(0x1ac6 ^ S[0]); S[1] = (u8)(0x25c9 ^ S[1]); S[2] = (u8)(0x4a93 ^ S[2]); S[3] = (u8)(0x8536 ^ S[3]);
-	S[4] = (u8)(0xa493 ^ S[4]); S[5] = (u8)(0x5863 ^ S[5]); S[6] = (u8)(0xa16c ^ S[6]); S[7] = (u8)(0x529c ^ S[7]);
-	S[8] = (u8)(0xc925 ^ S[8]); S[9] = (u8)(0xc61a ^ S[9]); S[10] = (u8)(0x3685 ^ S[10]); S[11] = (u8)(0x394a ^ S[11]);
-	S[12] = (u8)(0x6358 ^ S[12]); S[13] = (u8)(0x93a4 ^ S[13]); S[14] = (u8)(0x9c52 ^ S[14]); S[15] = (u8)(0x6ca1 ^ S[15]);
+	temp[0] = S[3] ^ S[4] ^ S[6] ^ S[8] ^ S[9] ^ S[13] ^ S[14];
+	temp[1] = S[2] ^ S[5] ^ S[7] ^ S[8] ^ S[9] ^ S[12] ^ S[15];
+	temp[2] = S[1] ^ S[4] ^ S[6] ^ S[10] ^ S[11] ^ S[12] ^ S[15];
+	temp[3] = S[0] ^ S[5] ^ S[7] ^ S[10] ^ S[11] ^ S[13] ^ S[14];
+
+	temp[4] = S[0] ^ S[2] ^ S[5] ^ S[8] ^ S[11] ^ S[14] ^ S[15];
+	temp[5] = S[1] ^ S[3] ^ S[4] ^ S[9] ^ S[10] ^ S[14] ^ S[15];
+	temp[6] = S[0] ^ S[2] ^ S[7] ^ S[9] ^ S[10] ^ S[12] ^ S[13];
+	temp[7] = S[1] ^ S[3] ^ S[6] ^ S[8] ^ S[11] ^ S[12] ^ S[13];
+
+	temp[8] = S[0] ^ S[1] ^ S[4] ^ S[7] ^ S[10] ^ S[13] ^ S[15];
+	temp[9] = S[0] ^ S[1] ^ S[5] ^ S[6] ^ S[11] ^ S[12] ^ S[14];
+	temp[10] = S[2] ^ S[3] ^ S[5] ^ S[6] ^ S[8] ^ S[13] ^ S[15];
+	temp[11] = S[2] ^ S[3] ^ S[4] ^ S[7] ^ S[9] ^ S[12] ^ S[14];
+
+	temp[12] = S[1] ^ S[2] ^ S[6] ^ S[7] ^ S[9] ^ S[11] ^ S[12];
+	temp[13] = S[0] ^ S[3] ^ S[6] ^ S[7] ^ S[8] ^ S[10] ^ S[13];
+	temp[14] = S[0] ^ S[3] ^ S[4] ^ S[5] ^ S[9] ^ S[11] ^ S[14];
+	temp[15] = S[1] ^ S[2] ^ S[4] ^ S[5] ^ S[8] ^ S[10] ^ S[15];
+
+	for (i = 0; i < 16; i += 4) {
+		S[i] = temp[i];
+		S[i + 1] = temp[i + 1];
+		S[i + 2] = temp[i + 2];
+		S[i + 3] = temp[i + 3];
+	}
 }
 
 void RoundKeyGeneration128(u8 W[64], u8 RK[208]) {
@@ -212,7 +235,7 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 	temp[0] = KL[0] ^ CK1[0]; temp[1] = KL[1] ^ CK1[1]; temp[2] = KL[2] ^ CK1[2]; temp[3] = KL[3] ^ CK1[3];
 	temp[4] = KL[4] ^ CK1[4]; temp[5] = KL[5] ^ CK1[5]; temp[6] = KL[6] ^ CK1[6]; temp[7] = KL[7] ^ CK1[7];
 	temp[8] = KL[8] ^ CK1[8]; temp[9] = KL[9] ^ CK1[9]; temp[10] = KL[10] ^ CK1[10]; temp[11] = KL[11] ^ CK1[11];
-	temp[12] = KL[12] ^ CK1[0]; temp[13] = KL[13] ^ CK1[13]; temp[14] = KL[14] ^ CK1[14]; temp[15] = KL[15] ^ CK1[15];
+	temp[12] = KL[12] ^ CK1[12]; temp[13] = KL[13] ^ CK1[13]; temp[14] = KL[14] ^ CK1[14]; temp[15] = KL[15] ^ CK1[15];
 
 	SubstLayer(temp, 1);
 	DiffLayer(temp);
@@ -226,7 +249,7 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 	   DiffLayer(SubstLayer(W1 XOR CK2)) XOR W0*/
 	temp[0] = W[16] ^ CK2[0]; temp[1] = W[17] ^ CK2[1]; temp[2] = W[18] ^ CK2[2]; temp[3] = W[19] ^ CK2[3];
 	temp[4] = W[20] ^ CK2[4]; temp[5] = W[21] ^ CK2[5]; temp[6] = W[22] ^ CK2[6]; temp[7] = W[23] ^ CK2[7];
-	temp[8] = W[24] ^ CK2[8]; temp[8] = W[25] ^ CK2[8]; temp[10] = W[26] ^ CK2[10]; temp[11] = W[27] ^ CK2[11];
+	temp[8] = W[24] ^ CK2[8]; temp[9] = W[25] ^ CK2[9]; temp[10] = W[26] ^ CK2[10]; temp[11] = W[27] ^ CK2[11];
 	temp[12] = W[28] ^ CK2[12]; temp[13] = W[29] ^ CK2[13]; temp[14] = W[30] ^ CK2[14]; temp[15] = W[31] ^ CK2[15];
 
 	SubstLayer(temp, 2);
@@ -248,9 +271,9 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 	DiffLayer(temp);
 
 	W[48] = temp[0] ^ W[16]; W[49] = temp[1] ^ W[17]; W[50] = temp[2] ^ W[18]; W[51] = temp[3] ^ W[19];
-	W[52] = temp[0] ^ W[20]; W[53] = temp[1] ^ W[21]; W[54] = temp[2] ^ W[22]; W[55] = temp[3] ^ W[23];
-	W[56] = temp[0] ^ W[24]; W[57] = temp[1] ^ W[25]; W[58] = temp[2] ^ W[26]; W[59] = temp[3] ^ W[27];
-	W[60] = temp[0] ^ W[28]; W[61] = temp[1] ^ W[29]; W[62] = temp[2] ^ W[30]; W[63] = temp[3] ^ W[31];
+	W[52] = temp[4] ^ W[20]; W[53] = temp[5] ^ W[21]; W[54] = temp[6] ^ W[22]; W[55] = temp[7] ^ W[23];
+	W[56] = temp[8] ^ W[24]; W[57] = temp[9] ^ W[25]; W[58] = temp[10] ^ W[26]; W[59] = temp[11] ^ W[27];
+	W[60] = temp[12] ^ W[28]; W[61] = temp[13] ^ W[29]; W[62] = temp[14] ^ W[30]; W[63] = temp[15] ^ W[31];
 
 	/* Start for Key Generation */
 	RoundKeyGeneration128(W, RK);
