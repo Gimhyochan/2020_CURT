@@ -3,6 +3,7 @@
 #include <assert.h>
 
 unsigned int Constant[8] = { 0xc3efe9db, 0x44626b02, 0x79e27c8a, 0x78df30ec, 0x715ea49e, 0xc785da0a, 0xe04ef22a, 0xe5c40957, };
+
 unsigned int ROL(int n, unsigned int x) {
 	while (n >= 32) {
 		n -= 32;
@@ -103,7 +104,6 @@ void RoundEnc(unsigned int PT[], unsigned int* RK) {
 	PT[3] = temp;
 	return;
 }
-
 void LEA_ENC(unsigned int PT[], unsigned int RK[], int Nr, unsigned int CT[]) {
 	for (int i = 0; i < Nr; i++) {
 		RoundEnc(PT, &RK[6 * i]);
@@ -141,4 +141,6 @@ int main() {
 
 	LEA_ENC(PT256, RK256, Nr, CT256);
 	printf("0x%x 0x%x 0x%x 0x%x\n", CT256[0], CT256[1], CT256[2], CT256[3]);
+
+	return 0;
 }
