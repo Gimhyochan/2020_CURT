@@ -2,29 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ARIA.h"
-/* 키 초기화에서 사용되는 상수 전역변수로 정의*/
 u8 CK1[16] = { 0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0 };
 u8 CK2[16] = { 0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0 };
 u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e };
-/* Change 8-bits to 32-bits */
+
 u32 u4byte_in(u8* x) {
 	return (x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3];
 }
-/* Change 32-bits to 8-bits */
+
 void u4byte_out(u8* x, u32 y) {
 	x[0] = (y >> 24) & 0xff;
 	x[1] = (y >> 16) & 0xff;
 	x[2] = (y >> 8) & 0xff;
 	x[3] = y & 0xff;
 }
+
 void AddRoundKey(u8 S[16], u8 RK[16]) {
 	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] ^= RK[3];
 	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] ^= RK[7];
 	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] ^= RK[11];
 	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] ^= RK[15];
 }
+
 void SubstLayer(u8 S[16], int round) {
-	// 라운드 수가 홀수, 짝수일때 sbox 사용이 다름
 	if (round % 2 == 1) {
 		S[0] = S1box[S[0]]; S[1] = S2box[S[1]]; S[2] = inv_S1box[S[2]]; S[3] = inv_S2box[S[3]];
 		S[4] = S1box[S[4]]; S[5] = S2box[S[5]]; S[6] = inv_S1box[S[6]]; S[7] = inv_S2box[S[7]];
@@ -38,6 +38,7 @@ void SubstLayer(u8 S[16], int round) {
 		S[12] = inv_S1box[S[12]]; S[13] = inv_S2box[S[13]]; S[14] = S1box[S[14]]; S[15] = S2box[S[15]];
 	}
 }
+
 void DiffLayer(u8 S[16]) {
 	u8 temp[16];
 	int i;
@@ -70,7 +71,7 @@ void DiffLayer(u8 S[16]) {
 	}
 }
 
-void RoundKeyGeneration128(u8 W[64], u8 RK[208]) {
+void RoundKeyGeneration(u8 W[64], u8 RK[], int keysize) {
 	u32 temp[16];
 	/* W[0] = temp[0] ~ temp[3]; W[1] = temp[4] ~ temp[7];
 	   W[2] = temp[8] ~ temp[11]; W[3] = temp[12] ~ temp[15] */
@@ -209,17 +210,101 @@ void RoundKeyGeneration128(u8 W[64], u8 RK[208]) {
 	u4byte_out(RK + 196, result[1]);
 	u4byte_out(RK + 200, result[2]);
 	u4byte_out(RK + 204, result[3]);
+
+	if (keysize == 192) {
+		// ek14
+		result[0] = (temp[8] << 31) ^ (temp[9] >> 1) ^ temp[4];
+		result[1] = (temp[9] << 31) ^ (temp[10] >> 1) ^ temp[5];
+		result[2] = (temp[10] << 31) ^ (temp[11] >> 1) ^ temp[6];
+		result[3] = (temp[11] << 31) ^ (temp[8] >> 1) ^ temp[7];
+		u4byte_out(RK + 208, result[0]);
+		u4byte_out(RK + 212, result[1]);
+		u4byte_out(RK + 216, result[2]);
+		u4byte_out(RK + 220, result[3]);
+
+		// ek15
+		result[0] = (temp[12] << 31) ^ (temp[13] >> 1) ^ temp[8];
+		result[1] = (temp[13] << 31) ^ (temp[14] >> 1) ^ temp[9];
+		result[2] = (temp[14] << 31) ^ (temp[15] >> 1) ^ temp[10];
+		result[3] = (temp[15] << 31) ^ (temp[12] >> 1) ^ temp[11];
+		u4byte_out(RK + 224, result[0]);
+		u4byte_out(RK + 228, result[1]);
+		u4byte_out(RK + 232, result[2]);
+		u4byte_out(RK + 236, result[3]);
+	}
+	else if (keysize == 256) {
+		// ek14
+		result[0] = (temp[8] << 31) ^ (temp[9] >> 1) ^ temp[4];
+		result[1] = (temp[9] << 31) ^ (temp[10] >> 1) ^ temp[5];
+		result[2] = (temp[10] << 31) ^ (temp[11] >> 1) ^ temp[6];
+		result[3] = (temp[11] << 31) ^ (temp[8] >> 1) ^ temp[7];
+		u4byte_out(RK + 208, result[0]);
+		u4byte_out(RK + 212, result[1]);
+		u4byte_out(RK + 216, result[2]);
+		u4byte_out(RK + 220, result[3]);
+
+		// ek15
+		result[0] = (temp[12] << 31) ^ (temp[13] >> 1) ^ temp[8];
+		result[1] = (temp[13] << 31) ^ (temp[14] >> 1) ^ temp[9];
+		result[2] = (temp[14] << 31) ^ (temp[15] >> 1) ^ temp[10];
+		result[3] = (temp[15] << 31) ^ (temp[12] >> 1) ^ temp[11];
+		u4byte_out(RK + 224, result[0]);
+		u4byte_out(RK + 228, result[1]);
+		u4byte_out(RK + 232, result[2]);
+		u4byte_out(RK + 236, result[3]);
+
+		// ek16
+		result[0] = (temp[0] << 31) ^ (temp[1] >> 1) ^ temp[12];
+		result[1] = (temp[1] << 31) ^ (temp[2] >> 1) ^ temp[13];
+		result[2] = (temp[2] << 31) ^ (temp[3] >> 1) ^ temp[14];
+		result[3] = (temp[3] << 31) ^ (temp[0] >> 1) ^ temp[15];
+		u4byte_out(RK + 240, result[0]);
+		u4byte_out(RK + 244, result[1]);
+		u4byte_out(RK + 248, result[2]);
+		u4byte_out(RK + 252, result[3]);
+
+		// ek17
+		result[0] = (temp[4] << 19) ^ (temp[5] >> 13) ^ temp[0];
+		result[1] = (temp[5] << 19) ^ (temp[6] >> 13) ^ temp[1];
+		result[2] = (temp[6] << 19) ^ (temp[7] >> 13) ^ temp[2];
+		result[3] = (temp[7] << 19) ^ (temp[4] >> 13) ^ temp[3];
+		u4byte_out(RK + 256, result[0]);
+		u4byte_out(RK + 260, result[1]);
+		u4byte_out(RK + 264, result[2]);
+		u4byte_out(RK + 268, result[3]);
+	}
 }
-void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8 RK[208]) {
+
+void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8 RK[208], int keysize) {
 	u8 temp[16];
+	int i;
+	/* keysize에 따라 사용되는 상수가 다른 것을 해결 */
+	if (keysize == 192) {
+		for (i = 0; i < 16; i++)
+			temp[i] = CK1[i];
+		for (i = 0; i < 16; i++) {
+			CK1[i] = CK2[i];
+			CK2[i] = CK3[i];
+			CK3[i] = temp[i];
+		}
+	}
+	else if (keysize == 256) {
+		for (i = 0; i < 16; i++)
+			temp[i] = CK3[i];
+		for (i = 0; i < 16; i++) {
+			CK3[i] = CK2[i];
+			CK2[i] = CK1[i];
+			CK1[i] = temp[i];
+		}
+	}
+
 	/* W0 : W[0] ~ W[15] */
 	W[0] = KL[0]; W[1] = KL[1]; W[2] = KL[2]; W[3] = KL[3];
 	W[4] = KL[4]; W[5] = KL[5]; W[6] = KL[6]; W[7] = KL[7];
 	W[8] = KL[8]; W[9] = KL[9]; W[10] = KL[10]; W[11] = KL[11];
 	W[12] = KL[12]; W[13] = KL[13]; W[14] = KL[14]; W[15] = KL[15];
 
-	/* W1 : W[16] ~ W[31]
-	   DiffLayer(SubstLayer(W0 XOR CK1)) XOR KR*/
+	/* W1 : W[16] ~ W[31] */
 	temp[0] = KL[0] ^ CK1[0]; temp[1] = KL[1] ^ CK1[1]; temp[2] = KL[2] ^ CK1[2]; temp[3] = KL[3] ^ CK1[3];
 	temp[4] = KL[4] ^ CK1[4]; temp[5] = KL[5] ^ CK1[5]; temp[6] = KL[6] ^ CK1[6]; temp[7] = KL[7] ^ CK1[7];
 	temp[8] = KL[8] ^ CK1[8]; temp[9] = KL[9] ^ CK1[9]; temp[10] = KL[10] ^ CK1[10]; temp[11] = KL[11] ^ CK1[11];
@@ -263,10 +348,10 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 	W[56] = temp[8] ^ W[24]; W[57] = temp[9] ^ W[25]; W[58] = temp[10] ^ W[26]; W[59] = temp[11] ^ W[27];
 	W[60] = temp[12] ^ W[28]; W[61] = temp[13] ^ W[29]; W[62] = temp[14] ^ W[30]; W[63] = temp[15] ^ W[31];
 
-	/* Start for Key Generation */
-	RoundKeyGeneration128(W, RK);
+	RoundKeyGeneration(W, RK, keysize);
 }
-void ARIA_ENC(u8 PT[16], u8 CT[16], int keysize, u8 W[64], u8 RK[208]) {
+
+void ARIA_ENC(u8 PT[16], u8 CT[16], int keysize, u8 RK[208]) {
 	int Nr = keysize / 32 + 8;
 	int i;
 	u8 temp[16];
@@ -290,40 +375,23 @@ void ARIA_ENC(u8 PT[16], u8 CT[16], int keysize, u8 W[64], u8 RK[208]) {
 int main() {
 
 	int i;
-	int keysize = 128;
+	int keysize = 256;
 	u8 PT[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
-	u8 MK[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
-	/* 키 확장 초기화 KL 담을 공간 */
+	u8 MK[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+				0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f };
 	u8 KL[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
-	/* 키 확장 초기화 KR 담을 공간 */
-	u8 KR[16] = { 0x00 };
+	u8 KR[16] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f };
 	u8 CT[16] = { 0x00 };
-	/* 키 확장 초기화와 라운드키 생성 중간 W0, W1, W2, W3를 담을 배열
-	   W0 : [0] ~ [15], W1 : [16] ~ [31], W2 : [32] ~ [47], W3 : [48] ~ [63] */
 	u8 W[64] = { 0x00 };
-	/* 13 x 16 (128비트는 13라운드키 필요, 각각 8비트배열 16개 필요 */
-	u8 RK[208] = { 0x00 };
+	/* enough space for 256-bits key generation */
+	u8 RK[272] = { 0x00 };
 
-	/* KL takes upper 128-bits of MK */
-	/* 반복문으로 KL, KR 구분해서 넣을려고 했는데 변수 충돌 오류 생겨서 일단 위에 변수 선언에서
-	   이거는 그냥 마스터키 절반 자르는거니까 절반 잘라서 일단 넣었음 */
-	   /* for (i = 0; i < 16; i++)
-		   KL[i] = (MK[i]);
-	   for (i = 16; i < 32; i++)
-		   KR[i] = (MK[i]); */
-
-	/* Round Key Check */
-	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK);
-	ARIA_ENC(PT, CT, keysize, W, RK);
+	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK, keysize);
+	ARIA_ENC(PT, CT, keysize, RK);
 
 	for (i = 0; i < 16; i++)
 		printf("%02x ", CT[i]);
 	printf("\n");
-
-	/* printf("0x%02x \n", S1box[0]);
-	printf("0x%02x \n", inv_S1box[0]);
-	printf("0x%02x \n", S2box[0]);
-	printf("0x%02x \n", inv_S2box[0]); */
 
 	return 0;
 }
