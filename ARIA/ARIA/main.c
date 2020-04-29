@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ARIA.h"
+
 u8 CK1[16] = { 0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0 };
 u8 CK2[16] = { 0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0 };
 u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e };
@@ -9,7 +10,6 @@ u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97,
 u32 u4byte_in(u8* x) {
 	return (x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3];
 }
-
 void u4byte_out(u8* x, u32 y) {
 	x[0] = (y >> 24) & 0xff;
 	x[1] = (y >> 16) & 0xff;
@@ -17,15 +17,14 @@ void u4byte_out(u8* x, u32 y) {
 	x[3] = y & 0xff;
 }
 
-void AddRoundKey(u8 S[16], u8 RK[16]) {
+void AddRoundKey(u8 S[], u8 RK[]) {
 	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] ^= RK[3];
 	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] ^= RK[7];
 	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] ^= RK[11];
 	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] ^= RK[15];
 }
-
-void SubstLayer(u8 S[16], int round) {
-	if (round % 2 == 1) {
+void SubstLayer(u8 S[], int round) {
+	if (round % 2) {
 		S[0] = S1box[S[0]]; S[1] = S2box[S[1]]; S[2] = inv_S1box[S[2]]; S[3] = inv_S2box[S[3]];
 		S[4] = S1box[S[4]]; S[5] = S2box[S[5]]; S[6] = inv_S1box[S[6]]; S[7] = inv_S2box[S[7]];
 		S[8] = S1box[S[8]]; S[9] = S2box[S[9]]; S[10] = inv_S1box[S[10]]; S[11] = inv_S2box[S[11]];
@@ -38,8 +37,7 @@ void SubstLayer(u8 S[16], int round) {
 		S[12] = inv_S1box[S[12]]; S[13] = inv_S2box[S[13]]; S[14] = S1box[S[14]]; S[15] = S2box[S[15]];
 	}
 }
-
-void DiffLayer(u8 S[16]) {
+void DiffLayer(u8 S[]) {
 	u8 temp[16];
 	int i;
 
@@ -71,7 +69,7 @@ void DiffLayer(u8 S[16]) {
 	}
 }
 
-void RoundKeyGeneration(u8 W[64], u8 RK[], int keysize) {
+void RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	u32 temp[16];
 	/* W[0] = temp[0] ~ temp[3]; W[1] = temp[4] ~ temp[7];
 	   W[2] = temp[8] ~ temp[11]; W[3] = temp[12] ~ temp[15] */
@@ -274,8 +272,7 @@ void RoundKeyGeneration(u8 W[64], u8 RK[], int keysize) {
 		u4byte_out(RK + 268, result[3]);
 	}
 }
-
-void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8 RK[208], int keysize) {
+void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[], u8 W[], u8 RK[], int keysize) {
 	u8 temp[16];
 	int i;
 	/* keysize에 따라 사용되는 상수가 다른 것을 해결 */
@@ -351,7 +348,7 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 	RoundKeyGeneration(W, RK, keysize);
 }
 
-void ARIA_ENC(u8 PT[16], u8 CT[16], int keysize, u8 RK[208]) {
+void ARIA_ENC(u8 PT[], u8 CT[], int keysize, u8 RK[]) {
 	int Nr = keysize / 32 + 8;
 	int i;
 	u8 temp[16];
