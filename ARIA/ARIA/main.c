@@ -18,10 +18,10 @@ void u4byte_out(u8* x, u32 y) {
 	x[3] = y & 0xff;
 }
 void AddRoundKey(u8 S[16], u8 RK[16]) {
-	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] = RK[3];
-	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] = RK[7];
-	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] = RK[11];
-	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] = RK[15];
+	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] ^= RK[3];
+	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] ^= RK[7];
+	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] ^= RK[11];
+	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] ^= RK[15];
 }
 void SubstLayer(u8 S[16], int round) {
 	// 라운드 수가 홀수, 짝수일때 sbox 사용이 다름
@@ -312,13 +312,8 @@ int main() {
 	   for (i = 16; i < 32; i++)
 		   KR[i] = (MK[i]); */
 
-		   /* Round Key Check */
+	/* Round Key Check */
 	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK);
-	for (i = 0; i < 208; i++) {
-		printf("%02x ", RK[i]);
-		if (i % 16 == 15)
-			printf("\n\n");
-	}
 	ARIA_ENC(PT, CT, keysize, W, RK);
 
 	for (i = 0; i < 16; i++)
