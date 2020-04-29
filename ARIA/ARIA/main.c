@@ -10,11 +10,6 @@ u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97,
 u32 u4byte_in(u8* x) {
 	return (x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3];
 }
-// Change 8-bits to 64-bits
-/*u64 u4byte_in64(u8* x) {
-	return (x[0] << 56) | (x[1] << 48) | (x[2] << 40) | (x[3] << 32) | 
-		(x[4] << 24) | (x[5] << 16) | (x[6] << 8) | x[7];
-} */
 /* Change 32-bits to 8-bits */
 void u4byte_out(u8* x, u32 y) {
 	x[0] = (y >> 24) & 0xff;
@@ -22,13 +17,6 @@ void u4byte_out(u8* x, u32 y) {
 	x[2] = (y >> 8) & 0xff;
 	x[3] = y & 0xff;
 }
-// Change 64-bits to 8-bits 
-/* void u4byte_out64(u8* x, u64 y) {
-	x[0] = (y >> 56) & 0xff; x[1] = (y >> 48) & 0xff;
-	x[2] = (y >> 40) & 0xff; x[3] = (y >> 32) & 0xff;
-	x[4] = (y >> 24) & 0xff; x[5] = (y >> 16) & 0xff;
-	x[6] = (y >> 8) & 0xff; x[7] = y & 0xff;
-} */
 void AddRoundKey(u8 S[16], u8 RK[16]) {
 	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] = RK[3];
 	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] = RK[7];
@@ -86,141 +74,141 @@ void RoundKeyGeneration128(u8 W[64], u8 RK[208]) {
 	u32 temp[16];
 	/* W[0] = temp[0] ~ temp[3]; W[1] = temp[4] ~ temp[7];
 	   W[2] = temp[8] ~ temp[11]; W[3] = temp[12] ~ temp[15] */
-	u32 result[16];
+	u32 result[4];
 	int i;
 
 	for (i = 0; i < 64; i += 4)
 		temp[i / 4] = u4byte_in(W + i);
 
 	// ek1
-	result[4] = (temp[7] & 0x7ffff) | ((temp[4] >> 19) & 0x1fff);
-	result[5] = (temp[4] & 0x7ffff) | ((temp[5] >> 19) & 0x1fff);
-	result[6] = (temp[5] & 0x7ffff) | ((temp[6] >> 19) & 0x1fff);
-	result[7] = (temp[6] & 0x7ffff) | ((temp[7] >> 19) & 0x1fff);
-	u4byte_out(RK, temp[0] ^ result[4]);
-	u4byte_out(RK + 4, temp[1] ^ result[5]);
-	u4byte_out(RK + 8, temp[2] ^ result[6]);
-	u4byte_out(RK + 12, temp[3] ^ result[7]);
+	result[0] = (temp[7] << 13) ^ (temp[4] >> 19) ^ temp[0];
+	result[1] = (temp[4] << 13) ^ (temp[5] >> 19) ^ temp[1];
+	result[2] = (temp[5] << 13) ^ (temp[6] >> 19) ^ temp[2];
+	result[3] = (temp[6] << 13) ^ (temp[7] >> 19) ^ temp[3];
+	u4byte_out(RK, result[0]);
+	u4byte_out(RK + 4, result[1]);
+	u4byte_out(RK + 8, result[2]);
+	u4byte_out(RK + 12, result[3]);
 
 	// ek2
-	result[8] = (temp[11] & 0x7ffff) | ((temp[8] >> 19) & 0x1fff);
-	result[9] = (temp[8] & 0x7ffff) | ((temp[9] >> 19) & 0x1fff);
-	result[10] = (temp[9] & 0x7ffff) | ((temp[10] >> 19) & 0x1fff);
-	result[11] = (temp[10] & 0x7ffff) | ((temp[11] >> 19) & 0x1fff);
-	u4byte_out(RK + 16, temp[4] ^ result[8]);
-	u4byte_out(RK + 20, temp[5] ^ result[9]);
-	u4byte_out(RK + 24, temp[6] ^ result[10]);
-	u4byte_out(RK + 28, temp[7] ^ result[11]);
+	result[0] = (temp[11] << 13) ^ (temp[8] >> 19) ^ temp[4];
+	result[1] = (temp[8] << 13) ^ (temp[9] >> 19) ^ temp[5];
+	result[2] = (temp[9] << 13) ^ (temp[10] >> 19) ^ temp[6];
+	result[3] = (temp[10] << 13) ^ (temp[11] >> 19) ^ temp[7];
+	u4byte_out(RK + 16, result[0]);
+	u4byte_out(RK + 20, result[1]);
+	u4byte_out(RK + 24, result[2]);
+	u4byte_out(RK + 28, result[3]);
 
 	// ek3
-	result[12] = (temp[15] & 0x7ffff) | ((temp[12] >> 19) & 0x1fff);
-	result[13] = (temp[12] & 0x7ffff) | ((temp[13] >> 19) & 0x1fff);
-	result[14] = (temp[13] & 0x7ffff) | ((temp[14] >> 19) & 0x1fff);
-	result[15] = (temp[14] & 0x7ffff) | ((temp[15] >> 19) & 0x1fff);
-	u4byte_out(RK + 32, temp[8] ^ result[12]);
-	u4byte_out(RK + 36, temp[9] ^ result[13]);
-	u4byte_out(RK + 40, temp[10] ^ result[14]);
-	u4byte_out(RK + 44, temp[11] ^ result[15]);
+	result[0] = (temp[15] << 13) ^ (temp[12] >> 19) ^ temp[8];
+	result[1] = (temp[12] << 13) ^ (temp[13] >> 19) ^ temp[9];
+	result[2] = (temp[13] << 13) ^ (temp[14] >> 19) ^ temp[10];
+	result[3] = (temp[14] << 13) ^ (temp[15] >> 19) ^ temp[11];
+	u4byte_out(RK + 32, result[0]);
+	u4byte_out(RK + 36, result[1]);
+	u4byte_out(RK + 40, result[2]);
+	u4byte_out(RK + 44, result[3]);
 
 	// ek4
-	result[0] = (temp[3] & 0x7ffff) | ((temp[0] >> 19) & 0x1fff);
-	result[1] = (temp[0] & 0x7ffff) | ((temp[1] >> 19) & 0x1fff);
-	result[2] = (temp[1] & 0x7ffff) | ((temp[2] >> 19) & 0x1fff);
-	result[3] = (temp[2] & 0x7ffff) | ((temp[3] >> 19) & 0x1fff);
-	u4byte_out(RK + 48, temp[12] ^ result[0]);
-	u4byte_out(RK + 52, temp[13] ^ result[1]);
-	u4byte_out(RK + 56, temp[14] ^ result[2]);
-	u4byte_out(RK + 60, temp[15] ^ result[3]);
+	result[0] = (temp[3] << 13) ^ (temp[0] >> 19) ^ temp[12];
+	result[1] = (temp[0] << 13) ^ (temp[1] >> 19) ^ temp[13];
+	result[2] = (temp[1] << 13) ^ (temp[2] >> 19) ^ temp[14];
+	result[3] = (temp[2] << 13) ^ (temp[3] >> 19) ^ temp[15];
+	u4byte_out(RK + 48, result[0]);
+	u4byte_out(RK + 52, result[1]);
+	u4byte_out(RK + 56, result[2]);
+	u4byte_out(RK + 60, result[3]);
 
 	// ek5
-	result[4] = (temp[7] & 0x7fffffff) | ((temp[4] >> 31) & 0x1);
-	result[5] = (temp[4] & 0x7fffffff) | ((temp[5] >> 31) & 0x1);
-	result[6] = (temp[5] & 0x7fffffff) | ((temp[6] >> 31) & 0x1);
-	result[7] = (temp[6] & 0x7fffffff) | ((temp[7] >> 31) & 0x1);
-	u4byte_out(RK + 64, temp[0] ^ result[4]);
-	u4byte_out(RK + 68, temp[1] ^ result[5]);
-	u4byte_out(RK + 72, temp[2] ^ result[6]);
-	u4byte_out(RK + 76, temp[3] ^ result[7]);
+	result[0] = (temp[7] << 1) ^ (temp[4] >> 31) ^ temp[0];
+	result[1] = (temp[4] << 1) ^ (temp[5] >> 31) ^ temp[1];
+	result[2] = (temp[5] << 1) ^ (temp[6] >> 31) ^ temp[2];
+	result[3] = (temp[6] << 1) ^ (temp[7] >> 31) ^ temp[3];
+	u4byte_out(RK + 64, result[0]);
+	u4byte_out(RK + 68, result[1]);
+	u4byte_out(RK + 72, result[2]);
+	u4byte_out(RK + 76, result[3]);
 
 	// ek6
-	result[8] = (temp[11] & 0x7fffffff) | ((temp[8] >> 31) & 0x1);
-	result[9] = (temp[8] & 0x7fffffff) | ((temp[9] >> 31) & 0x1);
-	result[10] = (temp[9] & 0x7fffffff) | ((temp[10] >> 31) & 0x1);
-	result[11] = (temp[10] & 0x7fffffff) | ((temp[11] >> 31) & 0x1);
-	u4byte_out(RK + 80, temp[4] ^ result[8]);
-	u4byte_out(RK + 84, temp[5] ^ result[9]);
-	u4byte_out(RK + 88, temp[6] ^ result[10]);
-	u4byte_out(RK + 92, temp[7] ^ result[11]);
+	result[0] = (temp[11] << 1) ^ (temp[8] >> 31) ^ temp[4];
+	result[1] = (temp[8] << 1) ^ (temp[9] >> 31) ^ temp[5];
+	result[2] = (temp[9] << 1) ^ (temp[10] >> 31) ^ temp[6];
+	result[3] = (temp[10] << 1) ^ (temp[11] >> 31) ^ temp[7];
+	u4byte_out(RK + 80, result[0]);
+	u4byte_out(RK + 84, result[1]);
+	u4byte_out(RK + 88, result[2]);
+	u4byte_out(RK + 92, result[3]);
 
 	// ek7
-	result[12] = (temp[15] & 0x7fffffff) | ((temp[12] >> 31) & 0x1);
-	result[13] = (temp[12] & 0x7fffffff) | ((temp[13] >> 31) & 0x1);
-	result[14] = (temp[13] & 0x7fffffff) | ((temp[14] >> 31) & 0x1);
-	result[15] = (temp[14] & 0x7fffffff) | ((temp[15] >> 31) & 0x1);
-	u4byte_out(RK + 96, temp[8] ^ result[12]);
-	u4byte_out(RK + 100, temp[9] ^ result[13]);
-	u4byte_out(RK + 104, temp[10] ^ result[14]);
-	u4byte_out(RK + 108, temp[11] ^ result[15]);
+	result[0] = (temp[15] << 1) ^ (temp[12] >> 31) ^ temp[8];
+	result[1] = (temp[12] << 1) ^ (temp[13] >> 31) ^ temp[9];
+	result[2] = (temp[13] << 1) ^ (temp[14] >> 31) ^ temp[10];
+	result[3] = (temp[14] << 1) ^ (temp[15] >> 31) ^ temp[11];
+	u4byte_out(RK + 96, result[0]);
+	u4byte_out(RK + 100, result[1]);
+	u4byte_out(RK + 104, result[2]);
+	u4byte_out(RK + 108, result[3]);
 
 	// ek8
-	result[0] = (temp[3] & 0x7fffffff) | ((temp[0] >> 31) & 0x1);
-	result[1] = (temp[0] & 0x7fffffff) | ((temp[1] >> 31) & 0x1);
-	result[2] = (temp[1] & 0x7fffffff) | ((temp[2] >> 31) & 0x1);
-	result[3] = (temp[2] & 0x7fffffff) | ((temp[3] >> 31) & 0x1);
-	u4byte_out(RK + 112, temp[12] ^ result[0]);
-	u4byte_out(RK + 116, temp[13] ^ result[1]);
-	u4byte_out(RK + 120, temp[14] ^ result[2]);
-	u4byte_out(RK + 124, temp[15] ^ result[3]);
+	result[0] = (temp[3] << 1) ^ (temp[0] >> 31) ^ temp[12];
+	result[1] = (temp[0] << 1) ^ (temp[1] >> 31) ^ temp[13];
+	result[2] = (temp[1] << 1) ^ (temp[2] >> 31) ^ temp[14];
+	result[3] = (temp[2] << 1) ^ (temp[3] >> 31) ^ temp[15];
+	u4byte_out(RK + 112, result[0]);
+	u4byte_out(RK + 116, result[1]);
+	u4byte_out(RK + 120, result[2]);
+	u4byte_out(RK + 124, result[3]);
 
 	// ek9
-	result[4] = (temp[5] & 0x7) | ((temp[6] >> 3) & 0x1fffffff);
-	result[5] = (temp[6] & 0x7) | ((temp[7] >> 3) & 0x1fffffff);
-	result[6] = (temp[7] & 0x7) | ((temp[4] >> 3) & 0x1fffffff);
-	result[7] = (temp[4] & 0x7) | ((temp[5] >> 3) & 0x1fffffff);
-	u4byte_out(RK + 128, temp[0] ^ result[4]);
-	u4byte_out(RK + 132, temp[1] ^ result[5]);
-	u4byte_out(RK + 136, temp[2] ^ result[6]);
-	u4byte_out(RK + 140, temp[3] ^ result[7]);
+	result[0] = (temp[5] << 29) ^ (temp[6] >> 3) ^ temp[0];
+	result[1] = (temp[6] << 29) ^ (temp[7] >> 3) ^ temp[1];
+	result[2] = (temp[7] << 29) ^ (temp[4] >> 3) ^ temp[2];
+	result[3] = (temp[4] << 29) ^ (temp[5] >> 3) ^ temp[3];
+	u4byte_out(RK + 128, result[0]);
+	u4byte_out(RK + 132, result[1]);
+	u4byte_out(RK + 136, result[2]);
+	u4byte_out(RK + 140, result[3]);
 
 	// ek10
-	result[8] = (temp[9] & 0x7) | ((temp[10] >> 3) & 0x1fffffff);
-	result[9] = (temp[10] & 0x7) | ((temp[11] >> 3) & 0x1fffffff);
-	result[10] = (temp[11] & 0x7) | ((temp[8] >> 3) & 0x1fffffff);
-	result[11] = (temp[8] & 0x7) | ((temp[9] >> 3) & 0x1fffffff);
-	u4byte_out(RK + 144, temp[4] ^ result[8]);
-	u4byte_out(RK + 148, temp[5] ^ result[9]);
-	u4byte_out(RK + 152, temp[6] ^ result[10]);
-	u4byte_out(RK + 156, temp[7] ^ result[11]);
+	result[0] = (temp[9] << 29) ^ (temp[10] >> 3) ^ temp[4];
+	result[1] = (temp[10] << 29) ^ (temp[11] >> 3) ^ temp[5];
+	result[2] = (temp[11] << 29) ^ (temp[8] >> 3) ^ temp[6];
+	result[3] = (temp[8] << 29) ^ (temp[9] >> 3) ^ temp[7];
+	u4byte_out(RK + 144, result[0]);
+	u4byte_out(RK + 148, result[1]);
+	u4byte_out(RK + 152, result[2]);
+	u4byte_out(RK + 156, result[3]);
 
 	// ek11
-	result[12] = (temp[13] & 0x7) | ((temp[14] >> 3) & 0x1fffffff);
-	result[13] = (temp[14] & 0x7) | ((temp[15] >> 3) & 0x1fffffff);
-	result[14] = (temp[15] & 0x7) | ((temp[12] >> 3) & 0x1fffffff);
-	result[15] = (temp[12] & 0x7) | ((temp[13] >> 3) & 0x1fffffff);
-	u4byte_out(RK + 160, temp[8] ^ result[12]);
-	u4byte_out(RK + 164, temp[9] ^ result[13]);
-	u4byte_out(RK + 168, temp[10] ^ result[14]);
-	u4byte_out(RK + 172, temp[11] ^ result[15]);
+	result[0] = (temp[13] << 29) ^ (temp[14] >> 3) ^ temp[8];
+	result[1] = (temp[14] << 29) ^ (temp[15] >> 3) ^ temp[9];
+	result[2] = (temp[15] << 29) ^ (temp[12] >> 3) ^ temp[10];
+	result[3] = (temp[12] << 29) ^ (temp[13] >> 3) ^ temp[11];
+	u4byte_out(RK + 160, result[0]);
+	u4byte_out(RK + 164, result[1]);
+	u4byte_out(RK + 168, result[2]);
+	u4byte_out(RK + 172, result[3]);
 
 	// ek12
-	result[0] = (temp[1] & 0x7) | ((temp[2] >> 3) & 0x1fffffff);
-	result[1] = (temp[2] & 0x7) | ((temp[3] >> 3) & 0x1fffffff);
-	result[2] = (temp[3] & 0x7) | ((temp[0] >> 3) & 0x1fffffff);
-	result[3] = (temp[0] & 0x7) | ((temp[1] >> 3) & 0x1fffffff);
-	u4byte_out(RK + 176, temp[12] ^ result[0]);
-	u4byte_out(RK + 180, temp[13] ^ result[1]);
-	u4byte_out(RK + 184, temp[14] ^ result[2]);
-	u4byte_out(RK + 188, temp[15] ^ result[3]);
+	result[0] = (temp[1] << 29) ^ (temp[2] >> 3) ^ temp[12];
+	result[1] = (temp[2] << 29) ^ (temp[3] >> 3) ^ temp[13];
+	result[2] = (temp[3] << 29) ^ (temp[0] >> 3) ^ temp[14];
+	result[3] = (temp[0] << 29) ^ (temp[1] >> 3) ^ temp[15];
+	u4byte_out(RK + 176, result[0]);
+	u4byte_out(RK + 180, result[1]);
+	u4byte_out(RK + 184, result[2]);
+	u4byte_out(RK + 188, result[3]);
 
 	// ek13
-	result[4] = (temp[4] & 0x1) | ((temp[5] >> 1) & 0x7fffffff);
-	result[5] = (temp[5] & 0x1) | ((temp[6] >> 1) & 0x7fffffff);
-	result[6] = (temp[6] & 0x1) | ((temp[7] >> 1) & 0x7fffffff);
-	result[7] = (temp[7] & 0x1) | ((temp[4] >> 1) & 0x7fffffff);
-	u4byte_out(RK + 192, temp[0] ^ result[4]);
-	u4byte_out(RK + 196, temp[1] ^ result[5]);
-	u4byte_out(RK + 200, temp[2] ^ result[6]);
-	u4byte_out(RK + 204, temp[3] ^ result[7]);
+	result[0] = (temp[4] << 31) ^ (temp[5] >> 1) ^ temp[0];
+	result[1] = (temp[5] << 31) ^ (temp[6] >> 1) ^ temp[1];
+	result[2] = (temp[6] << 31) ^ (temp[7] >> 1) ^ temp[2];
+	result[3] = (temp[7] << 31) ^ (temp[4] >> 1) ^ temp[3];
+	u4byte_out(RK + 192, result[0]);
+	u4byte_out(RK + 196, result[1]);
+	u4byte_out(RK + 200, result[2]);
+	u4byte_out(RK + 204, result[3]);
 }
 void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8 RK[208]) {
 	u8 temp[16];
@@ -286,16 +274,14 @@ void ARIA_ENC(u8 PT[16], u8 CT[16], int keysize, u8 W[64], u8 RK[208]) {
 	for (i = 0; i < 16; i++)
 		temp[i] = PT[i];
 
-	AddRoundKey(temp, RK);
-
-	for (i = 0; i < Nr - 1; i++) {
-		SubstLayer(temp, i + 1);
+	for (i = 1; i < Nr; i++) {
+		AddRoundKey(temp, RK + 16 * (i - 1));
+		SubstLayer(temp, i);
 		DiffLayer(temp);
-		AddRoundKey(temp, RK + 16 * (i + 1));
 	}
-
-	SubstLayer(temp, i + 1);
-	AddRoundKey(temp, RK + 16 * (i + 1));
+	AddRoundKey(temp, RK + 16 * (i - 1));
+	SubstLayer(temp, i);
+	AddRoundKey(temp, RK + 16 * i);
 
 	for (i = 0; i < 16; i++)
 		CT[i] = temp[i];
@@ -326,7 +312,7 @@ int main() {
 	   for (i = 16; i < 32; i++)
 		   KR[i] = (MK[i]); */
 
-	/* Round Key Check */
+		   /* Round Key Check */
 	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK);
 	for (i = 0; i < 208; i++) {
 		printf("%02x ", RK[i]);
