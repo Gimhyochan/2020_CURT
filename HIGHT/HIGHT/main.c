@@ -21,7 +21,7 @@ void Keyschedule(unsigned char MK[], unsigned char WK[], unsigned char RK[]) {
 
 
 
-HIGHT_ENC(unsigned char PT[], unsigned char WK[], unsigned char RK[], unsigned char CT[]) {
+void HIGHT_ENC(unsigned char PT[], unsigned char WK[], unsigned char RK[], unsigned char CT[]) {
 	unsigned char X[8] = { PT[0] + WK[0], PT[1], PT[2] + WK[1], PT[3], PT[4] + WK[2], PT[5], PT[6] + WK[3], PT[7], };
 	unsigned char temp[8];
 	int i;
