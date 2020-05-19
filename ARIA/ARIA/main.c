@@ -1,7 +1,11 @@
+/* ARIA는 128bit key는 12, 192bit는 14, 256bit는 16라운드 동작 */
+/* 키를 생성하는 과정은 1. 키확장 초기화 과정과 2. 라운드키 생성 두 부분으로 이루어짐 */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "ARIA.h"
+
+/* 128bit key의 경우의 상수, 192와 256은 키 생성 과정에서 바꾸는 코드 사용 */
 u8 CK1[16] = { 0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0 };
 u8 CK2[16] = { 0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0 };
 u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e };
@@ -9,7 +13,6 @@ u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97,
 u32 u4byte_in(u8* x) {
 	return (x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3];
 }
-
 void u4byte_out(u8* x, u32 y) {
 	x[0] = (y >> 24) & 0xff;
 	x[1] = (y >> 16) & 0xff;
@@ -17,15 +20,15 @@ void u4byte_out(u8* x, u32 y) {
 	x[3] = y & 0xff;
 }
 
-void AddRoundKey(u8 S[16], u8 RK[16]) {
+void AddRoundKey(u8 S[], u8 RK[]) {
 	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] ^= RK[3];
 	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] ^= RK[7];
 	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] ^= RK[11];
 	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] ^= RK[15];
 }
-
-void SubstLayer(u8 S[16], int round) {
-	if (round % 2 == 1) {
+/* 홀수 라운드와 짝수 라운드의 S-box 구조가 달라 짝수, 홀수의 경우를 나눠서 작성 */
+void SubstLayer(u8 S[], int round) {
+	if (round % 2) {
 		S[0] = S1box[S[0]]; S[1] = S2box[S[1]]; S[2] = inv_S1box[S[2]]; S[3] = inv_S2box[S[3]];
 		S[4] = S1box[S[4]]; S[5] = S2box[S[5]]; S[6] = inv_S1box[S[6]]; S[7] = inv_S2box[S[7]];
 		S[8] = S1box[S[8]]; S[9] = S2box[S[9]]; S[10] = inv_S1box[S[10]]; S[11] = inv_S2box[S[11]];
@@ -38,8 +41,8 @@ void SubstLayer(u8 S[16], int round) {
 		S[12] = inv_S1box[S[12]]; S[13] = inv_S2box[S[13]]; S[14] = S1box[S[14]]; S[15] = S2box[S[15]];
 	}
 }
-
-void DiffLayer(u8 S[16]) {
+/* 입력 128bit를 확산계층에 사용되는 16 x 16 행렬대로 XOR 연산 수행 */
+void DiffLayer(u8 S[]) {
 	u8 temp[16];
 	int i;
 
@@ -71,21 +74,30 @@ void DiffLayer(u8 S[16]) {
 	}
 }
 
-void RoundKeyGeneration(u8 W[64], u8 RK[], int keysize) {
+/* 2. 라운드 키 생성 */
+/* 생성된 W0, W1, W2, W3를 32bit 4개씩 나눠서 넣음 */
+void RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	u32 temp[16];
 	/* W[0] = temp[0] ~ temp[3]; W[1] = temp[4] ~ temp[7];
 	   W[2] = temp[8] ~ temp[11]; W[3] = temp[12] ~ temp[15] */
 	u32 result[4];
+	/* 라운드 키 생성에서 비트를 옮긴 작업을 저장할 공간 생서 */
 	int i;
 
+	/* W : W0 ~ W3를 8비트로 표현된걸 32비트로 묶어서 사용하기 위해 작성 */
 	for (i = 0; i < 64; i += 4)
 		temp[i / 4] = u4byte_in(W + i);
 
 	// ek1
+	/* ek1 = (W0) ^ (W1 >> 19) */
+	/* 이때 W0 = temp[0] ~ temp[3], W1 = temp[4] ~ temp[7] */
+	/* 나머지 키도 문서 참고해서 보면 됨 */
+	/* 라운드키 생성 수식 그대로임 */
 	result[0] = (temp[7] << 13) ^ (temp[4] >> 19) ^ temp[0];
 	result[1] = (temp[4] << 13) ^ (temp[5] >> 19) ^ temp[1];
 	result[2] = (temp[5] << 13) ^ (temp[6] >> 19) ^ temp[2];
 	result[3] = (temp[6] << 13) ^ (temp[7] >> 19) ^ temp[3];
+	/* 생성된 라운드키를 다시 8비트 배열에 저장하기 위해 사용 */
 	u4byte_out(RK, result[0]);
 	u4byte_out(RK + 4, result[1]);
 	u4byte_out(RK + 8, result[2]);
@@ -274,8 +286,8 @@ void RoundKeyGeneration(u8 W[64], u8 RK[], int keysize) {
 		u4byte_out(RK + 268, result[3]);
 	}
 }
-
-void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8 RK[208], int keysize) {
+/* 1. 키확장 초기화 과정 */
+void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[], u8 W[], u8 RK[], int keysize) {
 	u8 temp[16];
 	int i;
 	/* keysize에 따라 사용되는 상수가 다른 것을 해결 */
@@ -298,6 +310,7 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 		}
 	}
 
+	/* 키 확장 초기화 과정 그대로 따라가는 것임. */
 	/* W0 : W[0] ~ W[15] */
 	W[0] = KL[0]; W[1] = KL[1]; W[2] = KL[2]; W[3] = KL[3];
 	W[4] = KL[4]; W[5] = KL[5]; W[6] = KL[6]; W[7] = KL[7];
@@ -310,6 +323,7 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 	temp[8] = KL[8] ^ CK1[8]; temp[9] = KL[9] ^ CK1[9]; temp[10] = KL[10] ^ CK1[10]; temp[11] = KL[11] ^ CK1[11];
 	temp[12] = KL[12] ^ CK1[12]; temp[13] = KL[13] ^ CK1[13]; temp[14] = KL[14] ^ CK1[14]; temp[15] = KL[15] ^ CK1[15];
 
+	/* 키 확장 초기화 과정에서 홀수 라운드 함수와 짝수 라운드 함수가 사용됨 */
 	SubstLayer(temp, 1);
 	DiffLayer(temp);
 
@@ -348,10 +362,11 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[64], u8
 	W[56] = temp[8] ^ W[24]; W[57] = temp[9] ^ W[25]; W[58] = temp[10] ^ W[26]; W[59] = temp[11] ^ W[27];
 	W[60] = temp[12] ^ W[28]; W[61] = temp[13] ^ W[29]; W[62] = temp[14] ^ W[30]; W[63] = temp[15] ^ W[31];
 
+	/* 생성된 W를 가지고 RK에 저장하기 위해 2. 라운드키 생성을 시작 */
 	RoundKeyGeneration(W, RK, keysize);
 }
 
-void ARIA_ENC(u8 PT[16], u8 CT[16], int keysize, u8 RK[208]) {
+void ARIA_ENC(u8 PT[], u8 CT[], int keysize, u8 RK[]) {
 	int Nr = keysize / 32 + 8;
 	int i;
 	u8 temp[16];
@@ -359,11 +374,13 @@ void ARIA_ENC(u8 PT[16], u8 CT[16], int keysize, u8 RK[208]) {
 	for (i = 0; i < 16; i++)
 		temp[i] = PT[i];
 
+	/* 짝수, 홀수 라운드 구분을 위해 SubstLayer는 i를 추가로 인자로 넘김 */
 	for (i = 1; i < Nr; i++) {
 		AddRoundKey(temp, RK + 16 * (i - 1));
 		SubstLayer(temp, i);
 		DiffLayer(temp);
 	}
+	/* 마지막 라운드에는 DiffLayer가 없음 */
 	AddRoundKey(temp, RK + 16 * (i - 1));
 	SubstLayer(temp, i);
 	AddRoundKey(temp, RK + 16 * i);
@@ -377,13 +394,17 @@ int main() {
 	int i;
 	int keysize = 256;
 	u8 PT[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
-	u8 MK[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+	u8 MK[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
 				0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f };
+	/* KL은 MK의 상위 16바이트, KR은 MK의 하위 16바이트 */
 	u8 KL[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
 	u8 KR[16] = { 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f };
 	u8 CT[16] = { 0x00 };
 	u8 W[64] = { 0x00 };
 	/* enough space for 256-bits key generation */
+	/* 128bit : 13 x 16 = 208 */
+	/* 192bit : 15 x 16 = 240 */
+	/* 256bit : 17 x 16 = 272 */
 	u8 RK[272] = { 0x00 };
 
 	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK, keysize);
