@@ -11,7 +11,7 @@ void Keyschedule(unsigned char MK[], unsigned char WK[], unsigned char RK[]) {
 
 	for (int i = 0; i < 8; i++) {
 		for (int j = 0; j < 8; j++) {
-			RK[16 * i + j] = MK[(j - i + 8) % 8] + S[16 * i + j];
+			RK[16 * i + j] = MK[(j - i + 8) % 8] + S[16 * i + j]; //S : S 상수 테이블
 		}
 		for (int j = 0; j < 8; j++) {
 			RK[16 * i + j + 8] = MK[(j - i + 8) % 8 + 8] + S[16 * i + j + 8];
