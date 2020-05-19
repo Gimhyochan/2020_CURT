@@ -18,7 +18,7 @@ unsigned int ROR(int n, unsigned int x) {
 	if (!n)return x;
 	return (((x) >> n) ^ ((x) << (32 - n)));
 }
-void LEA_KeyGeneration128(unsigned int MK[], unsigned int RK[]) {
+void LEA_KeyGeneration128(unsigned int MK[], unsigned int RK[]) { //128bit-key keygeneration
 	unsigned int T[4];
 	for (int i = 0; i < 4; i++) {
 		T[i] = MK[i];
@@ -36,7 +36,7 @@ void LEA_KeyGeneration128(unsigned int MK[], unsigned int RK[]) {
 		RK[6 * i + 5] = T[1];
 	}
 }
-void LEA_KeyGeneration192(unsigned int MK[], unsigned int RK[]) {
+void LEA_KeyGeneration192(unsigned int MK[], unsigned int RK[]) { //192bit-key keygeneration
 	unsigned int T[6];
 	for (int i = 0; i < 6; i++) {
 		T[i] = MK[i];
@@ -57,7 +57,7 @@ void LEA_KeyGeneration192(unsigned int MK[], unsigned int RK[]) {
 	}
 
 }
-void LEA_KeyGeneration256(unsigned int MK[], unsigned int RK[]) {
+void LEA_KeyGeneration256(unsigned int MK[], unsigned int RK[]) { //256bit-key keygeneration
 	unsigned int T[8];
 	for (int i = 0; i < 8; i++) {
 		T[i] = MK[i];
@@ -79,7 +79,7 @@ void LEA_KeyGeneration256(unsigned int MK[], unsigned int RK[]) {
 	}
 
 }
-void LEA_KeyGeneration(unsigned int MK[], unsigned int RK[], int * Nr) {
+void LEA_KeyGeneration(unsigned int MK[], unsigned int RK[], int * Nr) { //keygeneration
 	int keysize;
 	for (keysize = 0; keysize < 8; keysize++) {
 		if (MK[keysize] == 0) {
@@ -95,7 +95,7 @@ void LEA_KeyGeneration(unsigned int MK[], unsigned int RK[], int * Nr) {
 	return;
 }
 
-void RoundEnc(unsigned int PT[], unsigned int* RK) {
+void RoundEnc(unsigned int PT[], unsigned int* RK) { //Encryption for each round
 	unsigned int temp;
 	temp = PT[0];
 	PT[0] = ROL(9, ((PT[0] ^ RK[0]) + (PT[1] ^ RK[1])));
@@ -116,29 +116,29 @@ void LEA_ENC(unsigned int PT[], unsigned int RK[], int Nr, unsigned int CT[]) {
 }
 
 int main() {
+	//128bit Encryption
 	unsigned int PT128[4] = { 0x13121110, 0x17161514, 0x1b1a1918, 0x1f1e1d1c };
 	unsigned int MK128[8] = { 0x3c2d1e0f, 0x78695a4b,0xb4a59687, 0xf0e1d2c3, 0x00000000, 0x00000000, 0x00000000, 0x00000000, };
 	unsigned int RK128[192] = { 0x00000000, };
 	unsigned int CT128[4] = { 0x00000000, };
 	int Nr=0;
 	LEA_KeyGeneration(MK128,RK128,&Nr);
-
 	LEA_ENC(PT128, RK128, Nr, CT128);
 	printf("0x%x 0x%x 0x%x 0x%x\n", CT128[0], CT128[1], CT128[2], CT128[3]);
+	//192bit Encryption
 	unsigned int PT192[4] = { 0x23222120, 0x27262524, 0x2b2a2928, 0x2f2e2d2c };
 	unsigned int MK192[8] = { 0x3c2d1e0f, 0x78695a4b,0xb4a59687, 0xf0e1d2c3, 0xc3d2e1f0, 0x8796a5b4, 0x00000000, 0x00000000, };
 	unsigned int RK192[192] = { 0x00000000, };
 	unsigned int CT192[4] = { 0x00000000, };
 	LEA_KeyGeneration(MK192, RK192, &Nr);
-
 	LEA_ENC(PT192, RK192, Nr, CT192);
 	printf("0x%x 0x%x 0x%x 0x%x\n", CT192[0], CT192[1], CT192[2], CT192[3]);
+	//256bit Encryption
 	unsigned int PT256[4] = { 0x33323130, 0x37363534, 0x3b3a3938, 0x3f3e3d3c };
 	unsigned int MK256[8] = { 0x3c2d1e0f, 0x78695a4b,0xb4a59687, 0xf0e1d2c3, 0xc3d2e1f0, 0x8796a5b4, 0x4b5a6978, 0x0f1e2d3c, };
 	unsigned int RK256[192] = { 0x00000000, };
 	unsigned int CT256[4] = { 0x00000000, };
 	LEA_KeyGeneration(MK256, RK256, &Nr);
-
 	LEA_ENC(PT256, RK256, Nr, CT256);
 	printf("0x%x 0x%x 0x%x 0x%x\n", CT256[0], CT256[1], CT256[2], CT256[3]);
 
