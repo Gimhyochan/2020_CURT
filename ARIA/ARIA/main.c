@@ -1,8 +1,10 @@
+/* ARIA는 128-bit는 12라운드, 192-bit는 14라운드, 256-bit는 16라운드 진행됨 */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "ARIA.h"
 
+/* 128-bit를 기준으로 고정 상수를 전역변수로 선언함. 192-bit와 256-bit의 경우는 키 생성 과정에서 바꿈 */
 u8 CK1[16] = { 0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0 };
 u8 CK2[16] = { 0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0 };
 u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e };
@@ -23,6 +25,7 @@ void AddRoundKey(u8 S[], u8 RK[]) {
 	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] ^= RK[11];
 	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] ^= RK[15];
 }
+/* 각 라운드 연산에서 홀수 라운드 함수와 짝수 라운드 함수에 사용되는 S-box가 다름 */
 void SubstLayer(u8 S[], int round) {
 	if (round % 2) {
 		S[0] = S1box[S[0]]; S[1] = S2box[S[1]]; S[2] = inv_S1box[S[2]]; S[3] = inv_S2box[S[3]];
@@ -37,6 +40,7 @@ void SubstLayer(u8 S[], int round) {
 		S[12] = inv_S1box[S[12]]; S[13] = inv_S2box[S[13]]; S[14] = S1box[S[14]]; S[15] = S2box[S[15]];
 	}
 }
+/* 확산계층은 16 x 16 크기의 행렬 연산이 사용됨. 필요한 부분만 가져와서 XOR연산 수행 */
 void DiffLayer(u8 S[]) {
 	u8 temp[16];
 	int i;
@@ -69,21 +73,28 @@ void DiffLayer(u8 S[]) {
 	}
 }
 
+/* 2. 라운드 키 생성 과정 */
+/* 1. 키확장 초기화 과정에서 생성된 W0 ~ W3를 활용해서 라운드 키를 생성 */
 void RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	u32 temp[16];
-	/* W[0] = temp[0] ~ temp[3]; W[1] = temp[4] ~ temp[7];
-	   W[2] = temp[8] ~ temp[11]; W[3] = temp[12] ~ temp[15] */
+	/* W0 = temp[0] ~ temp[3]; W1 = temp[4] ~ temp[7];
+	   W2 = temp[8] ~ temp[11]; W3 = temp[12] ~ temp[15] */
 	u32 result[4];
+	/* 비트를 이동시킨 값을 저장하기 위해 추가 공간을 선언 */
 	int i;
 
+	/* W를 8비트씩 된걸로 그대로 놔두면 코드가 길어지므로 최대한 코드 길이를 줄이도록
+	   32-bit씩 묶어서 temp 배열에 저장 */
 	for (i = 0; i < 64; i += 4)
 		temp[i / 4] = u4byte_in(W + i);
 
 	// ek1
+	/* ek1 = (W0) ^ (W1 >> 19) */
 	result[0] = (temp[7] << 13) ^ (temp[4] >> 19) ^ temp[0];
 	result[1] = (temp[4] << 13) ^ (temp[5] >> 19) ^ temp[1];
 	result[2] = (temp[5] << 13) ^ (temp[6] >> 19) ^ temp[2];
 	result[3] = (temp[6] << 13) ^ (temp[7] >> 19) ^ temp[3];
+	/* 완성된 라운드 키를 다시 8비트씩 나눠서 RK에 저장 */
 	u4byte_out(RK, result[0]);
 	u4byte_out(RK + 4, result[1]);
 	u4byte_out(RK + 8, result[2]);
@@ -272,6 +283,7 @@ void RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		u4byte_out(RK + 268, result[3]);
 	}
 }
+/* 1. 키확장 초기화 과정 수행 */
 void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[], u8 W[], u8 RK[], int keysize) {
 	u8 temp[16];
 	int i;
@@ -307,6 +319,7 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[], u8 W[], u8 RK[
 	temp[8] = KL[8] ^ CK1[8]; temp[9] = KL[9] ^ CK1[9]; temp[10] = KL[10] ^ CK1[10]; temp[11] = KL[11] ^ CK1[11];
 	temp[12] = KL[12] ^ CK1[12]; temp[13] = KL[13] ^ CK1[13]; temp[14] = KL[14] ^ CK1[14]; temp[15] = KL[15] ^ CK1[15];
 
+	/* 키확장 초기화 과정에 홀수 라운드 함수와 짝수 라운드 함수가 사용됨 */
 	SubstLayer(temp, 1);
 	DiffLayer(temp);
 
@@ -345,6 +358,7 @@ void ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[], u8 W[], u8 RK[
 	W[56] = temp[8] ^ W[24]; W[57] = temp[9] ^ W[25]; W[58] = temp[10] ^ W[26]; W[59] = temp[11] ^ W[27];
 	W[60] = temp[12] ^ W[28]; W[61] = temp[13] ^ W[29]; W[62] = temp[14] ^ W[30]; W[63] = temp[15] ^ W[31];
 
+	/* 완성된 W0 ~ W3을 가지고 본격적인 라운드 키 생성을 시작 */
 	RoundKeyGeneration(W, RK, keysize);
 }
 
@@ -361,6 +375,7 @@ void ARIA_ENC(u8 PT[], u8 CT[], int keysize, u8 RK[]) {
 		SubstLayer(temp, i);
 		DiffLayer(temp);
 	}
+	/* 마지막 라운드 함수는 DiffLayer(확산계층)가 사용되지 않는다 */
 	AddRoundKey(temp, RK + 16 * (i - 1));
 	SubstLayer(temp, i);
 	AddRoundKey(temp, RK + 16 * i);
@@ -381,6 +396,9 @@ int main() {
 	u8 CT[16] = { 0x00 };
 	u8 W[64] = { 0x00 };
 	/* enough space for 256-bits key generation */
+	/* 128-bit : 13 x 16 = 208 */
+	/* 192-bit : 15 x 16 = 240 */
+	/* 256-bit : 17 x 16 = 272 */
 	u8 RK[272] = { 0x00 };
 
 	ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK, keysize);
