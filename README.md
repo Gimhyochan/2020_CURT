@@ -1,2 +1,2 @@
 # 2020_CURT
-CURT
+######1 year research project
