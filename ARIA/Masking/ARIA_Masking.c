@@ -32,10 +32,14 @@ void u4byte_out(u8* x, u32 y) {
 }
 
 void Masking_AddRoundKey(u8 S[], u8 RK[]) {
-	S[0] ^= (RK[0] ^ mask[2]); S[1] ^= (RK[1] ^ mask[2]); S[2] ^= (RK[2] ^ mask[2]); S[3] ^= (RK[3] ^ mask[2]);
-	S[4] ^= (RK[4] ^ mask[2]); S[5] ^= (RK[5] ^ mask[2]); S[6] ^= (RK[6] ^ mask[2]); S[7] ^= (RK[7] ^ mask[2]);
-	S[8] ^= (RK[8] ^ mask[2]); S[9] ^= (RK[9] ^ mask[2]); S[10] ^= (RK[10] ^ mask[2]); S[11] ^= (RK[11] ^ mask[2]);
-	S[12] ^= (RK[12] ^ mask[2]); S[13] ^= (RK[13] ^ mask[2]); S[14] ^= (RK[14] ^ mask[2]); S[15] ^= (RK[15] ^ mask[2]);
+	S[0] ^= RK[0]; S[1] ^= RK[1]; S[2] ^= RK[2]; S[3] ^= RK[3];
+	S[4] ^= RK[4]; S[5] ^= RK[5]; S[6] ^= RK[6]; S[7] ^= RK[7];
+	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] ^= RK[11];
+	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] ^= RK[15];
+}
+void Masking_AddRoundKey2(u8 S[]) {
+	S[4] ^= mask[2]; S[5] ^= mask[2]; S[6] ^= mask[2]; S[7] ^= mask[2];
+	S[12] ^= mask[2]; S[13] ^= mask[2]; S[14] ^= mask[2]; S[15] ^= mask[2];
 }
 void Masking_SubstLayer(u8 S[], int round) {
 	if (round % 2) {
@@ -104,7 +108,6 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	u4byte_out(RK + 8, result[2]);
 	u4byte_out(RK + 12, result[3]);
 
-	// 이렇게 하는거 맞는지 질문
 	masktemp = (mask[2] << 5) ^ (mask[2] >> 3);
 	RK[0] ^= masktemp; RK[1] ^= masktemp; RK[2] ^= masktemp; RK[3] ^= masktemp;
 	RK[4] ^= masktemp; RK[5] ^= masktemp; RK[6] ^= masktemp; RK[7] ^= masktemp;
@@ -402,7 +405,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		RK[268] ^= masktemp; RK[269] ^= masktemp; RK[270] ^= masktemp; RK[271] ^= masktemp;
 	}
 }
-void Masking_ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[], u8 W[], u8 RK[], int keysize) {
+void Masking_ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[], u8 RK[], int keysize) {
 	u8 temp[16];
 	int i;
 
@@ -484,81 +487,34 @@ void Masking_ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[], u8 W[]
 	Masking_RoundKeyGeneration(W, RK, keysize);
 }
 
-void inputMasking(u8 S[]) {
-	S[0] ^= mask[1]; S[1] ^= mask[1]; S[2] ^= mask[0]; S[3] ^= mask[0];
-	S[4] ^= mask[1]; S[5] ^= mask[1]; S[6] ^= mask[0]; S[7] ^= mask[0];
-	S[8] ^= mask[1]; S[9] ^= mask[1]; S[10] ^= mask[0]; S[11] ^= mask[0];
-	S[12] ^= mask[1]; S[13] ^= mask[1]; S[14] ^= mask[0]; S[15] ^= mask[0];
-}
-void outputMasking(u8 S[]) {
-	S[0] ^= mask[0]; S[1] ^= mask[0]; S[2] ^= mask[1]; S[3] ^= mask[1];
-	S[4] ^= mask[0]; S[5] ^= mask[0]; S[6] ^= mask[1]; S[7] ^= mask[1];
-	S[8] ^= mask[0]; S[9] ^= mask[0]; S[10] ^= mask[1]; S[11] ^= mask[1];
-	S[12] ^= mask[0]; S[13] ^= mask[0]; S[14] ^= mask[1]; S[15] ^= mask[1];
-}
-void oddDiffusionMasking(u8 S[]) {
-	S[0] ^= mask[0]; S[1] ^= mask[0]; S[2] ^= mask[1]; S[3] ^= mask[1];
-	S[4] ^= mask[1]; S[5] ^= mask[1]; S[6] ^= mask[0]; S[7] ^= mask[0];
-	S[8] ^= mask[0]; S[9] ^= mask[0]; S[10] ^= mask[1]; S[11] ^= mask[1];
-	S[12] ^= mask[1]; S[13] ^= mask[1]; S[14] ^= mask[0]; S[15] ^= mask[0];
-}
-void evenDiffusionMasking(u8 S[]) {
-	S[0] ^= mask[1]; S[1] ^= mask[1]; S[2] ^= mask[0]; S[3] ^= mask[0];
-	S[4] ^= mask[0]; S[5] ^= mask[0]; S[6] ^= mask[1]; S[7] ^= mask[1];
-	S[8] ^= mask[1]; S[9] ^= mask[1]; S[10] ^= mask[0]; S[11] ^= mask[0];
-	S[12] ^= mask[0]; S[13] ^= mask[0]; S[14] ^= mask[1]; S[15] ^= mask[1];
-}
-void totalOutputMasking(u8 S[]) {
-	S[4] ^= mask[2]; S[5] ^= mask[2]; S[6] ^= mask[2]; S[7] ^= mask[2];
-	S[12] ^= mask[2]; S[13] ^= mask[2]; S[14] ^= mask[2]; S[15] ^= mask[2];
-}
-
-
 void Masking_ARIA_ENC(u8 PT[], u8 CT[], int keysize, u8 RK[]) {
 	int Nr = keysize / 32 + 8;
 	int i;
 	u8 temp[16];
 
-	for (i = 0; i < 16; i++)
-		temp[i] = PT[i];
+	/* first input masking with (m'm'mm)4*/
+	temp[0] = PT[0] ^ mask[1]; temp[1] = PT[1] ^ mask[1]; temp[2] = PT[2] ^ mask[0]; temp[3] = PT[3] ^ mask[0];
+	temp[4] = PT[4] ^ mask[1]; temp[5] = PT[5] ^ mask[1]; temp[6] = PT[6] ^ mask[0]; temp[7] = PT[7] ^ mask[0];
+	temp[8] = PT[8] ^ mask[1]; temp[9] = PT[9] ^ mask[1]; temp[10] = PT[10] ^ mask[0]; temp[11] = PT[11] ^ mask[0];
+	temp[12] = PT[12] ^ mask[1]; temp[13] = PT[13] ^ mask[1]; temp[14] = PT[14] ^ mask[0]; temp[15] = PT[15] ^ mask[0];
 
 	for (i = 1; i < Nr; i++) {
-		/* odd round */
-		if (i % 2) {
-			inputMasking(temp);
-			Masking_AddRoundKey(temp, RK + 16 * (i - 1));
-			outputMasking(temp);
-			Masking_SubstLayer(temp, i);
-			inputMasking(temp);
-			DiffLayer(temp);
-			oddDiffusionMasking(temp);
-			totalOutputMasking(temp);
-			outputMasking(temp);
-		}
-		/* even round */
-		else {
-			outputMasking(temp);
-			Masking_AddRoundKey(temp, RK + 16 * (i - 1));
-			inputMasking(temp);
-			Masking_SubstLayer(temp, i);
-			outputMasking(temp);
-			DiffLayer(temp);
-			evenDiffusionMasking(temp);
-			totalOutputMasking(temp);
-			inputMasking(temp);
-		}
+		/* 1 ~ Nr - 1 rounds */
+		Masking_AddRoundKey(temp, RK + 16 * (i - 1));
+		Masking_SubstLayer(temp, i);
+		DiffLayer(temp);
+		Masking_AddRoundKey2(temp);
 	}
 	/* last round */
-	outputMasking(temp);
 	Masking_AddRoundKey(temp, RK + 16 * (i - 1));
-	inputMasking(temp);
 	Masking_SubstLayer(temp, i);
-	outputMasking(temp);
 	Masking_AddRoundKey(temp, RK + 16 * i);
-	inputMasking(temp);
 
-	for (i = 0; i < 16; i++)
-		CT[i] = temp[i];
+	/* taking off masking */
+	CT[0] = temp[0] ^ mask[1]; CT[1] = temp[1] ^ mask[1]; CT[2] = temp[2] ^ mask[0]; CT[3] = temp[3] ^ mask[0];
+	CT[4] = temp[4] ^ mask[1]; CT[5] = temp[5] ^ mask[1]; CT[6] = temp[6] ^ mask[0]; CT[7] = temp[7] ^ mask[0];
+	CT[8] = temp[8] ^ mask[1]; CT[9] = temp[9] ^ mask[1]; CT[10] = temp[10] ^ mask[0]; CT[11] = temp[11] ^ mask[0];
+	CT[12] = temp[12] ^ mask[1]; CT[13] = temp[13] ^ mask[1]; CT[14] = temp[14] ^ mask[0]; CT[15] = temp[15] ^ mask[0];
 }
 
 void MaskingSboxComputation() {
@@ -573,10 +529,11 @@ void MaskingSboxComputation() {
 int main() {
 
 	int i;
-	int keysize = 128;
+	int keysize = 256;
 	u8 PT[16] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
-	u8 MK[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
-	u8 KL[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+	u8 MK[32] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+				0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f };
+	u8 KL[16] = { 0x00 };
 	u8 KR[16] = { 0x00 };
 	u8 CT[16] = { 0x00 };
 	u8 W[64] = { 0x00 };
@@ -590,19 +547,48 @@ int main() {
 	mask[0] = rand() % 255;
 	mask[1] = rand() % 255;
 	mask[2] = mask[0] ^ mask[1];
+	printf("Masking : %02x %02x %02x\n", mask[0], mask[1], mask[2]);
+	printf("===============================================================\n");
 
 	MaskingSboxComputation();
-	Masking_ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK, keysize);
-	Masking_ARIA_ENC(PT, CT, keysize, RK);
+	for (int i = 0; i < 16; i++) {
+		KL[i] = MK[i];
+		KR[i] = MK[i + 16];
+	}
 
-	/*ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK, keysize);
+	printf("Plaintext : ");
+	for (int i = 0; i < 16; i++)
+		printf("%02x ", PT[i]);
+	printf("\n");
+
+	printf("Masterkey : ");
+	for (int i = 0; i < 32; i++)
+		printf("%02x ", MK[i]);
+	printf("\n================================================================\n");
+
+	printf("KL: ");
+	for (int i = 0; i < 16; i++)
+		printf("%02x ", KL[i]);
+	printf("\n");
+
+	printf("KR: ");
+	for (int i = 0; i < 16; i++)
+		printf("%02x ", KR[i]);
+	printf("\n");
+
+	Masking_ARIA_KeySchedule_Initialization(MK, KL, KR, W, RK, keysize);
+	printf("==========================<Round Keys>==========================\n");
 	for (int i = 0; i < 272; i++) {
-		printf("%02x", RK[i]);
+		if (i % 16 == 0)
+			printf("%2d round key : ", ((i / 16) + 1));
+		printf("%02x ", RK[i]);
 		if (i % 16 == 15)
 			printf("\n");
 	}
-	ARIA_ENC(PT, CT, keysize, RK);*/
+	printf("===============================================================\n");
+	Masking_ARIA_ENC(PT, CT, keysize, RK);
 
+	printf("Ciphertext: ");
 	for (i = 0; i < 16; i++)
 		printf("%02x ", CT[i]);
 	printf("\n");
