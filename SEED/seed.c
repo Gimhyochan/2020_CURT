@@ -561,7 +561,7 @@ int main() {
 	printf("\n");
 
 	/*
-  SEED_KeySchedule(MK, RK, keysize);
+  	SEED_KeySchedule(MK, RK, keysize);
 	SEED_DEC(CT1, PT, RK, keysize);
 	for (int i = 0; i < 16; i++)
 		printf("%02x", PT[i]);
@@ -570,7 +570,7 @@ int main() {
 	for (int i = 0; i < 16; i++)
 		printf("%02x", PT[i]);
 	printf("\n");
-  */
+ 	*/
 
 	return 0;
 }
