@@ -77,12 +77,17 @@ void SEED_Encrypt(		/* encryption function */
     DWORD* pdwRoundKey			// [in]			round keys for encryption
 );
 
+void SEED_Masking_Encrypt(		/* encryption function */
+    BYTE* pbData, 				// [in,out]	data to be encrypted
+    DWORD* pdwRoundKey			// [in]			round keys for encryption
+);
+
 void SEED_Decrypt(		/* decryption function */
     BYTE* pbData, 				// [in,out]	data to be decrypted
     DWORD* pdwRoundKey			// [in]			round keys for decryption
 );
 
-void SEED_KeySched(		/* key scheduling function */
+void SEED_KeySchedKey(		/* key scheduling function */
     DWORD* pdwRoundKey, 		// [out]		round keys for encryption or decryption
     BYTE* pbUserKey				// [in]			secret user key 
 );

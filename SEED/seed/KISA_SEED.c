@@ -11,9 +11,68 @@
 
 /******************************* Include files ********************************/
 
+#include <time.h>
 #include "KISA_SEED.h"
 
+//*********************************************************************************************************************************
+// o SEED_Sbox1[]		: SEED_G() 함수에서 사용하는 사용되는 대치 테이블로서 8비트를 입력받아 8비트를 출력함
+//*********************************************************************************************************************************
+static BYTE SEED_S1box[256] = {
+    0xa9, 0x85, 0xd6, 0xd3, 0x54, 0x1d, 0xac, 0x25, 0x5d, 0x43, 0x18, 0x1e, 0x51, 0xfc, 0xca, 0x63,
+    0x28, 0x44, 0x20, 0x9d, 0xe0, 0xe2, 0xc8, 0x17, 0xa5, 0x8f, 0x03, 0x7b, 0xbb, 0x13, 0xd2, 0xee,
+    0x70, 0x8c, 0x3f, 0xa8, 0x32, 0xdd, 0xf6, 0x74, 0xec, 0x95, 0x0b, 0x57, 0x5c, 0x5b, 0xbd, 0x01,
+    0x24, 0x1c, 0x73, 0x98, 0x10, 0xcc, 0xf2, 0xd9, 0x2c, 0xe7, 0x72, 0x83, 0x9b, 0xd1, 0x86, 0xc9,
+    0x60, 0x50, 0xa3, 0xeb, 0x0d, 0xb6, 0x9e, 0x4f, 0xb7, 0x5a, 0xc6, 0x78, 0xa6, 0x12, 0xaf, 0xd5,
+    0x61, 0xc3, 0xb4, 0x41, 0x52, 0x7d, 0x8d, 0x08, 0x1f, 0x99, 0x00, 0x19, 0x04, 0x53, 0xf7, 0xe1,
+    0xfd, 0x76, 0x2f, 0x27, 0xb0, 0x8b, 0x0e, 0xab, 0xa2, 0x6e, 0x93, 0x4d, 0x69, 0x7c, 0x09, 0x0a,
+    0xbf, 0xef, 0xf3, 0xc5, 0x87, 0x14, 0xfe, 0x64, 0xde, 0x2e, 0x4b, 0x1a, 0x06, 0x21, 0x6b, 0x66,
+    0x02, 0xf5, 0x92, 0x8a, 0x0c, 0xb3, 0x7e, 0xd0, 0x7a, 0x47, 0x96, 0xe5, 0x26, 0x80, 0xad, 0xdf,
+    0xa1, 0x30, 0x37, 0xae, 0x36, 0x15, 0x22, 0x38, 0xf4, 0xa7, 0x45, 0x4c, 0x81, 0xe9, 0x84, 0x97,
+    0x35, 0xcb, 0xce, 0x3c, 0x71, 0x11, 0xc7, 0x89, 0x75, 0xfb, 0xda, 0xf8, 0x94, 0x59, 0x82, 0xc4,
+    0xff, 0x49, 0x39, 0x67, 0xc0, 0xcf, 0xd7, 0xb8, 0x0f, 0x8e, 0x42, 0x23, 0x91, 0x6c, 0xdb, 0xa4,
+    0x34, 0xf1, 0x48, 0xc2, 0x6f, 0x3d, 0x2d, 0x40, 0xbe, 0x3e, 0xbc, 0xc1, 0xaa, 0xba, 0x4e, 0x55,
+    0x3b, 0xdc, 0x68, 0x7f, 0x9c, 0xd8, 0x4a, 0x56, 0x77, 0xa0, 0xed, 0x46, 0xb5, 0x2b, 0x65, 0xfa,
+    0xe3, 0xb9, 0xb1, 0x9f, 0x5e, 0xf9, 0xe6, 0xb2, 0x31, 0xea, 0x6d, 0x5f, 0xe4, 0xf0, 0xcd, 0x88,
+    0x16, 0x3a, 0x58, 0xd4, 0x62, 0x29, 0x07, 0x33, 0xe8, 0x1b, 0x05, 0x79, 0x90, 0x6a, 0x2a, 0x9a };
 
+
+//*********************************************************************************************************************************
+// o SEED_Sbox2[]		: SEED_G() 함수에서 사용하는 사용되는 대치 테이블로서 8비트를 입력받아 8비트를 출력함
+//*********************************************************************************************************************************
+static BYTE SEED_S2box[256] = {
+    0x38, 0xe8, 0x2d, 0xa6, 0xcf, 0xde, 0xb3, 0xb8, 0xaf, 0x60, 0x55, 0xc7, 0x44, 0x6f, 0x6b, 0x5b,
+    0xc3, 0x62, 0x33, 0xb5, 0x29, 0xa0, 0xe2, 0xa7, 0xd3, 0x91, 0x11, 0x06, 0x1c, 0xbc, 0x36, 0x4b,
+    0xef, 0x88, 0x6c, 0xa8, 0x17, 0xc4, 0x16, 0xf4, 0xc2, 0x45, 0xe1, 0xd6, 0x3f, 0x3d, 0x8e, 0x98,
+    0x28, 0x4e, 0xf6, 0x3e, 0xa5, 0xf9, 0x0d, 0xdf, 0xd8, 0x2b, 0x66, 0x7a, 0x27, 0x2f, 0xf1, 0x72,
+    0x42, 0xd4, 0x41, 0xc0, 0x73, 0x67, 0xac, 0x8b, 0xf7, 0xad, 0x80, 0x1f, 0xca, 0x2c, 0xaa, 0x34,
+    0xd2, 0x0b, 0xee, 0xe9, 0x5d, 0x94, 0x18, 0xf8, 0x57, 0xae, 0x08, 0xc5, 0x13, 0xcd, 0x86, 0xb9,
+    0xff, 0x7d, 0xc1, 0x31, 0xf5, 0x8a, 0x6a, 0xb1, 0xd1, 0x20, 0xd7, 0x02, 0x22, 0x04, 0x68, 0x71,
+    0x07, 0xdb, 0x9d, 0x99, 0x61, 0xbe, 0xe6, 0x59, 0xdd, 0x51, 0x90, 0xdc, 0x9a, 0xa3, 0xab, 0xd0,
+    0x81, 0x0f, 0x47, 0x1a, 0xe3, 0xec, 0x8d, 0xbf, 0x96, 0x7b, 0x5c, 0xa2, 0xa1, 0x63, 0x23, 0x4d,
+    0xc8, 0x9e, 0x9c, 0x3a, 0x0c, 0x2e, 0xba, 0x6e, 0x9f, 0x5a, 0xf2, 0x92, 0xf3, 0x49, 0x78, 0xcc,
+    0x15, 0xfb, 0x70, 0x75, 0x7f, 0x35, 0x10, 0x03, 0x64, 0x6d, 0xc6, 0x74, 0xd5, 0xb4, 0xea, 0x09,
+    0x76, 0x19, 0xfe, 0x40, 0x12, 0xe0, 0xbd, 0x05, 0xfa, 0x01, 0xf0, 0x2a, 0x5e, 0xa9, 0x56, 0x43,
+    0x85, 0x14, 0x89, 0x9b, 0xb0, 0xe5, 0x48, 0x79, 0x97, 0xfc, 0x1e, 0x82, 0x21, 0x8c, 0x1b, 0x5f,
+    0x77, 0x54, 0xb2, 0x1d, 0x25, 0x4f, 0x00, 0x46, 0xed, 0x58, 0x52, 0xeb, 0x7e, 0xda, 0xc9, 0xfd,
+    0x30, 0x95, 0x65, 0x3c, 0xb6, 0xe4, 0xbb, 0x7c, 0x0e, 0x50, 0x39, 0x26, 0x32, 0x84, 0x69, 0x93,
+    0x37, 0xe7, 0x24, 0xa4, 0xcb, 0x53, 0x0a, 0x87, 0xd9, 0x4c, 0x83, 0x8f, 0xce, 0x3b, 0x4a, 0xb7 };
+
+void Generate_tables(DWORD* t0, DWORD* t1, DWORD* t2, DWORD* t3, BYTE* S0, BYTE* S1, BYTE m0, BYTE m1) {
+    BYTE MS0_box[256] = { 0, };
+    BYTE MS1_box[256] = { 0, };
+
+    for (int i = 0; i < 256; i++) {
+        MS0_box[i ^ m0] = S0[i] ^ m1;
+        MS1_box[i ^ m0] = S1[i] ^ m1;
+    }
+
+    for (int i = 0; i < 256; i++) {
+        t3[i] = ((MS1_box[i] & 0xcf) << 24) ^ ((MS1_box[i] & 0xf3) << 16) ^ ((MS1_box[i] & 0xfc) << 8) ^ (MS1_box[i] & 0x3f);
+        t2[i] = ((MS0_box[i] & 0xf3) << 24) ^ ((MS0_box[i] & 0xfc) << 16) ^ ((MS0_box[i] & 0x3f) << 8) ^ (MS0_box[i] & 0xcf);
+        t1[i] = ((MS1_box[i] & 0xfc) << 24) ^ ((MS1_box[i] & 0x3f) << 16) ^ ((MS1_box[i] & 0xcf) << 8) ^ (MS1_box[i] & 0xf3);
+        t0[i] = ((MS0_box[i] & 0x3f) << 24) ^ ((MS0_box[i] & 0xcf) << 16) ^ ((MS0_box[i] & 0xf3) << 8) ^ (MS0_box[i] & 0xfc);
+    }
+}
 static DWORD SS0[256] = {
 0x2989a1a8, 0x05858184, 0x16c6d2d4, 0x13c3d3d0, 0x14445054, 0x1d0d111c, 0x2c8ca0ac, 0x25052124,
 0x1d4d515c, 0x03434340, 0x18081018, 0x1e0e121c, 0x11415150, 0x3cccf0fc, 0x0acac2c8, 0x23436360,
@@ -183,6 +242,39 @@ static DWORD SS3[256] = {
     L0 ^= T0; L1 ^= T1;                            \
 }
 
+// Masking values m,m1
+// m2 = m xor m1
+#define initialize_masking() {                      \
+    m0 = rand() & 0xff;                             \
+    m1 = rand() & 0xff;                             \
+    m2 = m0 ^ m1;                                   \
+}
+
+// Round function F and adding output of F to L.
+// L0, L1 : left input values at each round
+// R0, R1 : right input values at each round
+// K : round keys at each round
+#define SEED_Masking_KeySched(L0, L1, R0, R1, K) {             \
+    T0 = R0 ^ (K)[0] ^ m1;                              \
+    T1 = R1 ^ (K)[1] ^ m2;                              \
+    T1 ^= T0;                                      \
+    T1 = MSS0[GetB0(T1)] ^ MSS1[GetB1(T1)] ^         \
+         MSS2[GetB2(T1)] ^ MSS3[GetB3(T1)];          \
+    T0 = (T0 + T1) & 0xffffffff;                   \
+    T0 = MSS0[GetB0(T0)] ^ MSS1[GetB1(T0)] ^         \
+         MSS2[GetB2(T0)] ^ MSS3[GetB3(T0)];          \
+    T1 = (T1 + T0) & 0xffffffff;                   \
+    T1 = MSS0[GetB0(T1)] ^ MSS1[GetB1(T1)] ^         \
+         MSS2[GetB2(T1)] ^ MSS3[GetB3(T1)];          \
+    T0 = (T0 + T1) & 0xffffffff;                   \
+    L0 ^= T0; L1 ^= T1;                            \
+}
+
+void Generate_Masking_Table(DWORD* m_table, DWORD* table, BYTE m0, BYTE m1) {
+    for (int i = 0; i < 256; i++) {
+        m_table[(i ^ m0) & 0xff] = table[i] ^ m1;
+    }
+}
 /********************************* Encryption *********************************/
 
 void SEED_Encrypt(
@@ -208,11 +300,15 @@ void SEED_Encrypt(
     R1 = EndianChange(R1);
 #endif
     printf("SetUp :\n\tL0: 0x%08x\n\tL1: 0x%08x\n\tR0: 0x%08x\n\tR1: 0x%08x\n", L0, L1, R0, R1);
-
+    printf("Beginning of Encryption\n");
     SEED_KeySched(L0, L1, R0, R1, K); 	// Round 1
+    printf("Round 1: 0x%08x 0x%08x 0x%08x 0x%08x\n", L0, L1, R0, R1);
     SEED_KeySched(R0, R1, L0, L1, K + 2); 	// Round 2
+    printf("Round 2: 0x%08x 0x%08x 0x%08x 0x%08x\n", R0, R1, L0, L1);
     SEED_KeySched(L0, L1, R0, R1, K + 4); 	// Round 3
+    printf("Round 3: 0x%08x 0x%08x 0x%08x 0x%08x\n", L0, L1, R0, R1);
     SEED_KeySched(R0, R1, L0, L1, K + 6); 	// Round 4
+    printf("Round 4:0x%08x 0x%08x 0x%08x 0x%08x\n", R0, R1, L0, L1);
     SEED_KeySched(L0, L1, R0, R1, K + 8); 	// Round 5
     SEED_KeySched(R0, R1, L0, L1, K + 10); 	// Round 6
     SEED_KeySched(L0, L1, R0, R1, K + 12); 	// Round 7
@@ -225,6 +321,125 @@ void SEED_Encrypt(
     SEED_KeySched(R0, R1, L0, L1, K + 26); 	// Round 14
     SEED_KeySched(L0, L1, R0, R1, K + 28); 	// Round 15
     SEED_KeySched(R0, R1, L0, L1, K + 30); 	// Round 16
+
+
+#ifdef LITTLE_ENDIAN
+    L0 = EndianChange(L0);
+    L1 = EndianChange(L1);
+    R0 = EndianChange(R0);
+    R1 = EndianChange(R1);
+#endif
+
+    // Copying output values from last round to pbData
+    pbData[0] = (BYTE)((R0) & 0xFF);
+    pbData[1] = (BYTE)((R0 >> 8) & 0xFF);
+    pbData[2] = (BYTE)((R0 >> 16) & 0xFF);
+    pbData[3] = (BYTE)((R0 >> 24) & 0xFF);
+
+    pbData[4] = (BYTE)((R1) & 0xFF);
+    pbData[5] = (BYTE)((R1 >> 8) & 0xFF);
+    pbData[6] = (BYTE)((R1 >> 16) & 0xFF);
+    pbData[7] = (BYTE)((R1 >> 24) & 0xFF);
+
+    pbData[8] = (BYTE)((L0) & 0xFF);
+    pbData[9] = (BYTE)((L0 >> 8) & 0xFF);
+    pbData[10] = (BYTE)((L0 >> 16) & 0xFF);
+    pbData[11] = (BYTE)((L0 >> 24) & 0xFF);
+
+    pbData[12] = (BYTE)((L1) & 0xFF);
+    pbData[13] = (BYTE)((L1 >> 8) & 0xFF);
+    pbData[14] = (BYTE)((L1 >> 16) & 0xFF);
+    pbData[15] = (BYTE)((L1 >> 24) & 0xFF);
+}
+
+void SEED_Masking_Encrypt(
+    BYTE* pbData, 				// [in,out]	data to be encrypted
+    DWORD* pdwRoundKey)			// [in]			round keys for encryption
+{
+    DWORD L0, L1, R0, R1;		// Iuput/output values at each rounds
+    DWORD T0, T1;				// Temporary variables for round function F
+    DWORD* K = pdwRoundKey;		// Pointer of round keys
+    BYTE m0, m1, m2;
+    DWORD m0_4, m1_4, m2_4;
+
+    DWORD MSS0[256] = { 0, };
+    DWORD MSS1[256] = { 0, };
+    DWORD MSS2[256] = { 0, };
+    DWORD MSS3[256] = { 0, };
+
+    srand((unsigned int)time(NULL));
+    initialize_masking();
+    m0_4 = (m0 << 24) + (m0 << 16) + (m0 << 8) + m0;
+    m1_4 = (m1 << 24) ^ (m1 << 16) ^ (m1 << 8) ^ m1;
+    m2_4 = (m2 << 24) ^ (m2 << 16) ^ (m2 << 8) ^ m2;
+
+    Generate_tables(MSS0, MSS1, MSS2, MSS3, SEED_S1box, SEED_S2box, m0, m1);
+    /*
+    printf("DWORD MSS0[256] = {\n");
+    for (int i = 0; i < 256; i++) {
+        printf("0x%08x ", MSS0[i]);
+        if (i % 16 == 15)printf("\n");
+    }
+    printf("}\n\n");
+
+    printf("DWORD MSS1[256] = {\n");
+    for (int i = 0; i < 256; i++) {
+        printf("0x%08x ", MSS1[i]);
+        if (i % 16 == 15)printf("\n");
+    }
+    printf("}\n\n");
+
+    printf("DWORD MSS2[256] = {\n");
+    for (int i = 0; i < 256; i++) {
+        printf("0x%08x ", MSS2[i]);
+        if (i % 16 == 15)printf("\n");
+    }
+    printf("}\n\n");
+
+    printf("DWORD MSS3[256] = {\n");
+    for (int i = 0; i < 256; i++) {
+        printf("0x%08x ", MSS3[i]);
+        if (i % 16 == 15)printf("\n");
+    }
+    printf("}\n\n");
+    */
+
+    // Set up input values for first round
+    L0 = ((DWORD)pbData[3] << 24) | ((DWORD)pbData[2] << 16) | ((DWORD)pbData[1] << 8) | ((DWORD)pbData[0]);
+    L1 = ((DWORD)pbData[7] << 24) | ((DWORD)pbData[6] << 16) | ((DWORD)pbData[5] << 8) | ((DWORD)pbData[4]);
+    R0 = ((DWORD)pbData[11] << 24) | ((DWORD)pbData[10] << 16) | ((DWORD)pbData[9] << 8) | ((DWORD)pbData[8]);
+    R1 = ((DWORD)pbData[15] << 24) | ((DWORD)pbData[14] << 16) | ((DWORD)pbData[13] << 8) | ((DWORD)pbData[12]);
+
+    // Reorder for big endian 
+    // Because SEED use little endian order in default
+#ifdef LITTLE_ENDIAN
+    L0 = EndianChange(L0);
+    L1 = EndianChange(L1);
+    R0 = EndianChange(R0);
+    R1 = EndianChange(R1);
+#endif
+    printf("SetUp :\n\tL0: 0x%08x\n\tL1: 0x%08x\n\tR0: 0x%08x\n\tR1: 0x%08x\n", L0, L1, R0, R1);
+    printf("Beginning of Encryption\n");
+    SEED_Masking_KeySched(L0, L1, R0, R1, K); 	// Round 1
+    printf("Round 1: 0x%08x 0x%08x 0x%08x 0x%08x\n", L0, L1, R0, R1);
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 2); 	// Round 2
+    printf("Round 2: 0x%08x 0x%08x 0x%08x 0x%08x\n", R0, R1, L0, L1);
+    SEED_Masking_KeySched(L0, L1, R0, R1, K + 4); 	// Round 3
+    printf("Round 3: 0x%08x 0x%08x 0x%08x 0x%08x\n", L0, L1, R0, R1);
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 6); 	// Round 4
+    printf("Round 4:0x%08x 0x%08x 0x%08x 0x%08x\n", R0, R1, L0, L1);
+    SEED_Masking_KeySched(L0, L1, R0, R1, K + 8); 	// Round 5
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 10); 	// Round 6
+    SEED_Masking_KeySched(L0, L1, R0, R1, K + 12); 	// Round 7
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 14); 	// Round 8
+    SEED_Masking_KeySched(L0, L1, R0, R1, K + 16); 	// Round 9
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 18); 	// Round 10
+    SEED_Masking_KeySched(L0, L1, R0, R1, K + 20); 	// Round 11
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 22); 	// Round 12
+    SEED_Masking_KeySched(L0, L1, R0, R1, K + 24); 	// Round 13
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 26); 	// Round 14
+    SEED_Masking_KeySched(L0, L1, R0, R1, K + 28); 	// Round 15
+    SEED_Masking_KeySched(R0, R1, L0, L1, K + 30); 	// Round 16
 
 
 #ifdef LITTLE_ENDIAN
@@ -438,6 +653,8 @@ void main()
                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     BYTE pbData[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 		// input plaintext to be encrypted
                         0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
+    BYTE pbData2[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 		// input plaintext to be encrypted
+                        0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F };
     int i;
 
     // Print user secret key
@@ -467,6 +684,17 @@ void main()
     printf("Ciphertext : ");
     for (i = 0; i < 16; i++)
         printf("%02X ", pbData[i]);
+
+    // Encryption
+    printf("\n\nEncryption....\n");
+    SEED_Masking_Encrypt(
+        pbData2,
+        pdwRoundKey);
+
+    // print encrypted data(ciphertext)
+    printf("Ciphertext Masked: ");
+    for (i = 0; i < 16; i++)
+        printf("%02X ", pbData2[i]);
 
     // Decryption
     printf("\n\nDecryption....\n");
