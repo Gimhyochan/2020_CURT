@@ -5,6 +5,11 @@ Written By : HeeSeok Kim, Tae Hyun Kim, Jeong-Choon Ryoo, Dong-Guk Han, SeokHie 
 Graduate School of Information Management and Security, Korea University,
 Electronics and Telecommunications Research Institute
 */
+/*
+<논문 관련 추가 정보>
+논문에 나와있는 [그림 3], [그림 4]의 '중간 마스킹 값'은 해당 값으로 마스킹을 적용하는 것이 아니라
+해당 마스킹이 적용된 입력값이 들어온다는 의미임. 즉, '추가 연산'에 해당하는 부분만 매 라운드에 추가해주면 됨.
+*/
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,10 +20,17 @@ Electronics and Telecommunications Research Institute
 u8 CK1[16] = { 0x51, 0x7c, 0xc1, 0xb7, 0x27, 0x22, 0x0a, 0x94, 0xfe, 0x13, 0xab, 0xe8, 0xfa, 0x9a, 0x6e, 0xe0 };
 u8 CK2[16] = { 0x6d, 0xb1, 0x4a, 0xcc, 0x9e, 0x21, 0xc8, 0x20, 0xff, 0x28, 0xb1, 0xd5, 0xef, 0x5d, 0xe2, 0xb0 };
 u8 CK3[16] = { 0xdb, 0x92, 0x37, 0x1d, 0x21, 0x26, 0xe9, 0x70, 0x03, 0x24, 0x97, 0x75, 0x04, 0xe8, 0xc9, 0x0e };
+
+/* Masking S-box를 생성하고 담을 변수 */
 u8 maskS1box[256] = { 0x00 };
 u8 maskS2box[256] = { 0x00 };
 u8 maskinvS1box[256] = { 0x00 };
 u8 maskinvS2box[256] = { 0x00 };
+
+/*
+랜덤으로 생성된 마스킹 값을 담을 배열
+m XOR m' = m''
+*/
 u8 mask[3] = { 0x00 };
 
 u32 u4byte_in(u8* x) {
@@ -37,6 +49,10 @@ void Masking_AddRoundKey(u8 S[], u8 RK[]) {
 	S[8] ^= RK[8]; S[9] ^= RK[9]; S[10] ^= RK[10]; S[11] ^= RK[11];
 	S[12] ^= RK[12]; S[13] ^= RK[13]; S[14] ^= RK[14]; S[15] ^= RK[15];
 }
+/* 
+각 라운드에서 추가 연산에 해당하는 부분을 연산하기 위한 함수
+(0000m''m''m''m'')2 형태로 XOR 연산이 추가됨.
+*/
 void Masking_AddRoundKey2(u8 S[]) {
 	S[4] ^= mask[2]; S[5] ^= mask[2]; S[6] ^= mask[2]; S[7] ^= mask[2];
 	S[12] ^= mask[2]; S[13] ^= mask[2]; S[14] ^= mask[2]; S[15] ^= mask[2];
@@ -99,6 +115,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		temp[i / 4] = u4byte_in(W + i);
 
 	// ek1
+	// (W0) XOR (W1 >> 19) XOR (m'' >> 3)16
 	result[0] = (temp[7] << 13) ^ (temp[4] >> 19) ^ temp[0];
 	result[1] = (temp[4] << 13) ^ (temp[5] >> 19) ^ temp[1];
 	result[2] = (temp[5] << 13) ^ (temp[6] >> 19) ^ temp[2];
@@ -115,6 +132,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[12] ^= masktemp; RK[13] ^= masktemp; RK[14] ^= masktemp; RK[15] ^= masktemp;
 
 	// ek2
+	// (W1) XOR (W2 >> 19) XOR (m'' >> 3)16
 	result[0] = (temp[11] << 13) ^ (temp[8] >> 19) ^ temp[4];
 	result[1] = (temp[8] << 13) ^ (temp[9] >> 19) ^ temp[5];
 	result[2] = (temp[9] << 13) ^ (temp[10] >> 19) ^ temp[6];
@@ -131,6 +149,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[28] ^= masktemp; RK[29] ^= masktemp; RK[30] ^= masktemp; RK[31] ^= masktemp;
 
 	// ek3
+	// (W2) XOR (W3 >> 19) XOR (m'' >> 3)16
 	result[0] = (temp[15] << 13) ^ (temp[12] >> 19) ^ temp[8];
 	result[1] = (temp[12] << 13) ^ (temp[13] >> 19) ^ temp[9];
 	result[2] = (temp[13] << 13) ^ (temp[14] >> 19) ^ temp[10];
@@ -147,6 +166,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[44] ^= masktemp; RK[45] ^= masktemp; RK[46] ^= masktemp; RK[47] ^= masktemp;
 
 	// ek4
+	// (W3) XOR (W0 >> 19) XOR (m'' >> 3)16
 	result[0] = (temp[3] << 13) ^ (temp[0] >> 19) ^ temp[12];
 	result[1] = (temp[0] << 13) ^ (temp[1] >> 19) ^ temp[13];
 	result[2] = (temp[1] << 13) ^ (temp[2] >> 19) ^ temp[14];
@@ -163,6 +183,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[60] ^= masktemp; RK[61] ^= masktemp; RK[62] ^= masktemp; RK[63] ^= masktemp;
 
 	// ek5
+	// (W0) XOR (W1 >> 31) XOR (m'' >> 7)16
 	result[0] = (temp[7] << 1) ^ (temp[4] >> 31) ^ temp[0];
 	result[1] = (temp[4] << 1) ^ (temp[5] >> 31) ^ temp[1];
 	result[2] = (temp[5] << 1) ^ (temp[6] >> 31) ^ temp[2];
@@ -179,6 +200,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[76] ^= masktemp; RK[77] ^= masktemp; RK[78] ^= masktemp; RK[79] ^= masktemp;
 
 	// ek6
+	// (W1) XOR (W2 >> 31) XOR (m'' >> 7)16
 	result[0] = (temp[11] << 1) ^ (temp[8] >> 31) ^ temp[4];
 	result[1] = (temp[8] << 1) ^ (temp[9] >> 31) ^ temp[5];
 	result[2] = (temp[9] << 1) ^ (temp[10] >> 31) ^ temp[6];
@@ -195,6 +217,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[92] ^= masktemp; RK[93] ^= masktemp; RK[94] ^= masktemp; RK[95] ^= masktemp;
 
 	// ek7
+	// (W2) XOR (W3 >> 31) XOR (m'' >> 7)16
 	result[0] = (temp[15] << 1) ^ (temp[12] >> 31) ^ temp[8];
 	result[1] = (temp[12] << 1) ^ (temp[13] >> 31) ^ temp[9];
 	result[2] = (temp[13] << 1) ^ (temp[14] >> 31) ^ temp[10];
@@ -211,6 +234,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[108] ^= masktemp; RK[109] ^= masktemp; RK[110] ^= masktemp; RK[111] ^= masktemp;
 
 	// ek8
+	// (W3) XOR (W0 >> 31) XOR (m'' >> 7)16
 	result[0] = (temp[3] << 1) ^ (temp[0] >> 31) ^ temp[12];
 	result[1] = (temp[0] << 1) ^ (temp[1] >> 31) ^ temp[13];
 	result[2] = (temp[1] << 1) ^ (temp[2] >> 31) ^ temp[14];
@@ -227,6 +251,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[124] ^= masktemp; RK[125] ^= masktemp; RK[126] ^= masktemp; RK[127] ^= masktemp;
 
 	// ek9
+	// (W0) XOR (W1 << 61) XOR (m'' << 5)16
 	result[0] = (temp[5] << 29) ^ (temp[6] >> 3) ^ temp[0];
 	result[1] = (temp[6] << 29) ^ (temp[7] >> 3) ^ temp[1];
 	result[2] = (temp[7] << 29) ^ (temp[4] >> 3) ^ temp[2];
@@ -243,6 +268,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[140] ^= masktemp; RK[141] ^= masktemp; RK[142] ^= masktemp; RK[143] ^= masktemp;
 
 	// ek10
+	// (W1) XOR (W2 << 61) XOR (m'' << 5)16
 	result[0] = (temp[9] << 29) ^ (temp[10] >> 3) ^ temp[4];
 	result[1] = (temp[10] << 29) ^ (temp[11] >> 3) ^ temp[5];
 	result[2] = (temp[11] << 29) ^ (temp[8] >> 3) ^ temp[6];
@@ -259,6 +285,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[156] ^= masktemp; RK[157] ^= masktemp; RK[158] ^= masktemp; RK[159] ^= masktemp;
 
 	// ek11
+	// (W2) XOR (W3 << 61) XOR (m'' << 5)16
 	result[0] = (temp[13] << 29) ^ (temp[14] >> 3) ^ temp[8];
 	result[1] = (temp[14] << 29) ^ (temp[15] >> 3) ^ temp[9];
 	result[2] = (temp[15] << 29) ^ (temp[12] >> 3) ^ temp[10];
@@ -275,6 +302,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[172] ^= masktemp; RK[173] ^= masktemp; RK[174] ^= masktemp; RK[175] ^= masktemp;
 
 	// ek12
+	// (W3) XOR (W0 << 61) XOR (m'' << 5)16
 	result[0] = (temp[1] << 29) ^ (temp[2] >> 3) ^ temp[12];
 	result[1] = (temp[2] << 29) ^ (temp[3] >> 3) ^ temp[13];
 	result[2] = (temp[3] << 29) ^ (temp[0] >> 3) ^ temp[14];
@@ -291,6 +319,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	RK[188] ^= masktemp; RK[189] ^= masktemp; RK[190] ^= masktemp; RK[191] ^= masktemp;
 
 	// ek13
+	// (W0) XOR (W1 << 31) XOR (m'' << 7)16
 	result[0] = (temp[4] << 31) ^ (temp[5] >> 1) ^ temp[0];
 	result[1] = (temp[5] << 31) ^ (temp[6] >> 1) ^ temp[1];
 	result[2] = (temp[6] << 31) ^ (temp[7] >> 1) ^ temp[2];
@@ -308,6 +337,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 
 	if (keysize == 192) {
 		// ek14
+		// (W1) XOR (W2 << 31) XOR (m'' << 7)16
 		result[0] = (temp[8] << 31) ^ (temp[9] >> 1) ^ temp[4];
 		result[1] = (temp[9] << 31) ^ (temp[10] >> 1) ^ temp[5];
 		result[2] = (temp[10] << 31) ^ (temp[11] >> 1) ^ temp[6];
@@ -324,6 +354,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		RK[220] ^= masktemp; RK[221] ^= masktemp; RK[222] ^= masktemp; RK[223] ^= masktemp;
 
 		// ek15
+		// (W2) XOR (W3 << 31) XOR (m'' << 7)16
 		result[0] = (temp[12] << 31) ^ (temp[13] >> 1) ^ temp[8];
 		result[1] = (temp[13] << 31) ^ (temp[14] >> 1) ^ temp[9];
 		result[2] = (temp[14] << 31) ^ (temp[15] >> 1) ^ temp[10];
@@ -341,6 +372,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 	}
 	else if (keysize == 256) {
 		// ek14
+		// (W1) XOR (W2 << 31) XOR (m'' << 7)16
 		result[0] = (temp[8] << 31) ^ (temp[9] >> 1) ^ temp[4];
 		result[1] = (temp[9] << 31) ^ (temp[10] >> 1) ^ temp[5];
 		result[2] = (temp[10] << 31) ^ (temp[11] >> 1) ^ temp[6];
@@ -357,6 +389,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		RK[220] ^= masktemp; RK[221] ^= masktemp; RK[222] ^= masktemp; RK[223] ^= masktemp;
 
 		// ek15
+		// (W2) XOR (W3 << 31) XOR (m'' << 7)16
 		result[0] = (temp[12] << 31) ^ (temp[13] >> 1) ^ temp[8];
 		result[1] = (temp[13] << 31) ^ (temp[14] >> 1) ^ temp[9];
 		result[2] = (temp[14] << 31) ^ (temp[15] >> 1) ^ temp[10];
@@ -373,6 +406,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		RK[236] ^= masktemp; RK[237] ^= masktemp; RK[238] ^= masktemp; RK[239] ^= masktemp;
 
 		// ek16
+		// (W3) XOR (W0 << 31) XOR (m'' << 7)16
 		result[0] = (temp[0] << 31) ^ (temp[1] >> 1) ^ temp[12];
 		result[1] = (temp[1] << 31) ^ (temp[2] >> 1) ^ temp[13];
 		result[2] = (temp[2] << 31) ^ (temp[3] >> 1) ^ temp[14];
@@ -389,6 +423,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		RK[252] ^= masktemp; RK[253] ^= masktemp; RK[254] ^= masktemp; RK[255] ^= masktemp;
 
 		// ek17
+		// (W0) XOR (W1 << 19) XOR (m'' << 3)16
 		result[0] = (temp[4] << 19) ^ (temp[5] >> 13) ^ temp[0];
 		result[1] = (temp[5] << 19) ^ (temp[6] >> 13) ^ temp[1];
 		result[2] = (temp[6] << 19) ^ (temp[7] >> 13) ^ temp[2];
@@ -405,6 +440,7 @@ void Masking_RoundKeyGeneration(u8 W[], u8 RK[], int keysize) {
 		RK[268] ^= masktemp; RK[269] ^= masktemp; RK[270] ^= masktemp; RK[271] ^= masktemp;
 	}
 }
+/* 모든 W 값들과 라운드 키들은 (m'')16으로 마스킹 된 형태여야 함. */
 void Masking_ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W[], u8 RK[], int keysize) {
 	u8 temp[16];
 	int i;
@@ -446,6 +482,10 @@ void Masking_ARIA_KeySchedule_Initialization(u8 MK[], u8 KL[16], u8 KR[16], u8 W
 	temp[8] = W[8] ^ mask[1] ^ CK1[8]; temp[9] = W[9] ^ mask[1] ^ CK1[9]; temp[10] = W[10] ^ mask[0] ^ CK1[10]; temp[11] = W[11] ^ mask[0] ^ CK1[11];
 	temp[12] = W[12] ^ mask[1] ^ CK1[12]; temp[13] = W[13] ^ mask[1] ^ CK1[13]; temp[14] = W[14] ^ mask[0] ^ CK1[14]; temp[15] = W[15] ^ mask[0] ^ CK1[15];
 
+	/* 
+	논문의 그림을 보면 각 라운드에는 추가연산으로 (0000m''m''m''m'')2가 적용되지만
+	라운드 키를 생성하는 과정에서 연산되는 라운드 함수 내에서는 추가 연산을 적용하지 않는다.
+	*/
 	Masking_SubstLayer(temp, 1);
 	DiffLayer(temp);
 
